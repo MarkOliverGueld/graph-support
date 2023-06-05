@@ -76,29 +76,30 @@ public class PortHelper {
     return null;
   }
 
-  public static FlatPoint getPortPoint(Line line, DNode node,
+  public static PortPoint getPortPoint(Line line, DNode node,
                                        DrawGraph drawGraph) {
     return getPortPoint(line, node, drawGraph, true);
   }
 
-  public static FlatPoint getPortPoint(Line line, DNode node, DrawGraph drawGraph,
+  public static PortPoint getPortPoint(Line line, DNode node, DrawGraph drawGraph,
                                        boolean portClipNode) {
     Asserts.nullArgument(node, "node");
     Asserts.nullArgument(drawGraph, "drawGraph");
 
     if (node.isVirtual() || line == null) {
-      return new FlatPoint(node.getX(), node.getY());
+      return new PortPoint(node.getX(), node.getY(), null);
     }
 
     LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(line);
     if (lineDrawProp == null) {
-      return new FlatPoint(node.getX(), node.getY());
+      return new PortPoint(node.getX(), node.getY(), null);
     }
 
     String cellId = getCellId(line, node, lineDrawProp);
 
     Port port = getLineEndPointPort(node.getNode(), line, drawGraph, false);
-    return endPoint(portClipNode, cellId, port, node.getNode(), drawGraph, node);
+    FlatPoint flatPoint = endPoint(portClipNode, cellId, port, node.getNode(), drawGraph, node);
+    return new PortPoint(flatPoint.getX(), flatPoint.getY(), port);
   }
 
   public static String getCellId(Line line, DNode node, LineDrawProp lineDrawProp) {
@@ -243,5 +244,20 @@ public class PortHelper {
 
     FlatPoint point = new FlatPoint(shapePosition.getX(), shapePosition.getY());
     return AbstractDotLineRouter.straightLineClipShape(shapePosition, point, portPoint);
+  }
+
+  public static class PortPoint extends FlatPoint {
+
+    private static final long serialVersionUID = 1628364834247941307L;
+    private final Port port;
+
+    public PortPoint(double height, double width, Port port) {
+      super(height, width);
+      this.port = port;
+    }
+
+    public Port getPort() {
+      return port;
+    }
   }
 }
