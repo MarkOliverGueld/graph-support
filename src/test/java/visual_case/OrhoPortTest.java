@@ -43,6 +43,10 @@ public class OrhoPortTest extends GraphvizVisual {
                      .tailPort(Port.EAST)
                      .headPort(Port.SOUTH)
                      .label("line 1").build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.EAST)
+                     .headPort(Port.SOUTH)
+                     .label("line 1").build())
         .addLine(Line.builder(a, c)
                      .tailPort(Port.EAST).headPort(Port.EAST)
                      .label("line 2").build())
@@ -57,4 +61,55 @@ public class OrhoPortTest extends GraphvizVisual {
     visual(graphviz);
   }
 
+  @Test
+  public void portCase2() {
+    Node a = Node.builder().label("a").build();
+    Node b = Node.builder().label("b").build();
+    Node c = Node.builder().label("c").build();
+    Node d = Node.builder().label("d").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .splines(Splines.ORTHO)
+        .showGrid(true)
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.WEST).headPort(Port.WEST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.WEST).headPort(Port.WEST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.WEST).headPort(Port.WEST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.WEST).headPort(Port.WEST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.WEST).headPort(Port.WEST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.EAST).headPort(Port.EAST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.EAST).headPort(Port.EAST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.EAST).headPort(Port.EAST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.EAST).headPort(Port.EAST)
+                     .build())
+        .addLine(Line.builder(c, d)
+                     .tailPort(Port.EAST).headPort(Port.SOUTH)
+                     .build())
+        .addLine(Line.builder(c, d)
+                     .tailPort(Port.NORTH).headPort(Port.WEST)
+                     .build())
+        .addLine(Line.builder(c, d)
+                     .tailPort(Port.NORTH).headPort(Port.WEST)
+//                     .label("666")
+                     .build())
+        .build();
+
+    visual(graphviz);
+  }
 }

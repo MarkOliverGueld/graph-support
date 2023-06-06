@@ -220,11 +220,11 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     PortPoint fromPoint = PortHelper.getPortPoint(lineDrawProp.getLine(), from, drawGraph);
     PortPoint toPoint = PortHelper.getPortPoint(lineDrawProp.getLine(), to, drawGraph);
     EdgeDraw edgeDraw = ovgRouter(fromCell, target, fromPoint, toPoint, edgeSegRecord);
+    pathContent.clear();
+
     if (edgeDraw == null) {
       return;
     }
-
-    pathContent.clear();
     lineDrawProp.fakeInit();
     edgeDraw.from = from;
     edgeDraw.to = to;
@@ -405,7 +405,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
 
       // If arrive at destination, terminate the router process
       if (arriveAtDestination(target, vertexDir, toCenter)) {
-        return terminateRouter(edgeSegRecord, fromCenter, vertexDir);
+        return terminateRouter(edgeSegRecord, fromCenter, toCenter, vertexDir);
       }
 
       GridVertex right = vertexDir.vertex.getRight();
@@ -439,11 +439,12 @@ class OrthogonalRouter extends AbstractDotLineRouter {
         && vertexDir.vertex.isNodeInternal();
   }
 
-  private EdgeDraw terminateRouter(EdgeSegRecord edgeSegRecord,
-                                   PortPoint fromCenter, VertexDir end) {
+  private EdgeDraw terminateRouter(EdgeSegRecord edgeSegRecord, PortPoint fromCenter,
+                                   PortPoint toCenter, VertexDir end) {
     VertexDir current = end;
     // The edge segment connect node "to" center and node border point
     EdgeSeg edgeSeg = null;
+    EdgeSeg lastSeg = null;
 
     do {
       // Refresh edge segment endpoint
@@ -462,6 +463,9 @@ class OrthogonalRouter extends AbstractDotLineRouter {
           edgeSeg != null ? !edgeSeg.isHor : current.isHor(),
           current.dir == RIGHT || current.dir == DOWN
       );
+      if (lastSeg == null) {
+        lastSeg = newEdgeSeg;
+      }
 
       // Set link info for these two segments
       if (edgeSeg != null) {
@@ -476,21 +480,39 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       current = current.parent;
     } while (current != null);
 
-    double move;
-    edgeSeg.canNotMove = fromCenter.getPort() != null;
-    if (edgeSeg.isHor) {
-      move = fromCenter.getX();
-      edgeSeg.moveAxis(fromCenter.getY() - edgeSeg.axis);
-    } else {
-      move = fromCenter.getY();
-      edgeSeg.moveAxis(fromCenter.getX() - edgeSeg.axis);
-    }
-    if (edgeSeg.nextAtStart()) {
-      edgeSeg.end = move;
-    } else {
-      edgeSeg.start = move;
-    }
+    adjustPortSeg(fromCenter, edgeSeg, true);
+    adjustPortSeg(toCenter, lastSeg, false);
+
     return new EdgeDraw(edgeSeg);
+  }
+
+  private static void adjustPortSeg(PortPoint portPoint, EdgeSeg edgeSeg, boolean isFrom) {
+    double move;
+    edgeSeg.canNotMove = portPoint.getPort() != null;
+    if (!edgeSeg.canNotMove) {
+      return;
+    }
+    if (edgeSeg.isHor) {
+      move = portPoint.getX();
+      edgeSeg.moveAxis(portPoint.getY() - edgeSeg.axis);
+    } else {
+      move = portPoint.getY();
+      edgeSeg.moveAxis(portPoint.getX() - edgeSeg.axis);
+    }
+    if (isFrom) {
+      if (edgeSeg.nextAtStart()) {
+        edgeSeg.end = move;
+      } else {
+        edgeSeg.start = move;
+      }
+    } else {
+      if (edgeSeg.preAtStart()) {
+        edgeSeg.end = move;
+      } else {
+        edgeSeg.start = move;
+      }
+    }
+
   }
 
   private void setEdgeRecord(EdgeSegRecord edgeSegRecord, VertexDir current, EdgeSeg edgeSeg) {
@@ -913,7 +935,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       this.parent = p;
       this.costBendNum = parentBendNum(p);
       this.estimateRemainBendNum = target.estimateBendNumToEnd(this);
-      this.costLen = parentLen(p) + lengthToParent();
+      this.costLen = parentLen(p) + lengthToParent(parent);
       this.estimateRemainLen = target.estimateLenToEnd(this);
     }
 
@@ -949,11 +971,11 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       return false;
     }
 
-    private double lengthToParent() {
-      if (parent == null) {
+    private double lengthToParent(VertexDir p) {
+      if (p == null) {
         return 0;
       }
-      return FlatPoint.twoPointDistance(parent.vertex.getX(), parent.vertex.getY(),
+      return FlatPoint.twoPointDistance(p.vertex.getX(), p.vertex.getY(),
                                         vertex.getX(), vertex.getY());
     }
 
@@ -973,12 +995,12 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       if (compareParent == parent) {
         return 0;
       }
-
       int r = Integer.compare(costBendNum, parentBendNum(compareParent));
       if (r != 0) {
         return r;
       }
-      return Double.compare(costLen, parentLen(compareParent));
+      return Double.compare(costLen - signIdx, parentLen(compareParent)
+          + lengthToParent(compareParent) - compareParent.signIdx);
     }
 
     @Override

@@ -46,7 +46,7 @@ public abstract class Maze {
   private static final int DOWN_ACCESSED = 0x20;
   private static final int LEFT_UP_CORNET = 0x40;
   private static final double INTERNAL_OFFSET = 0.01;
-  private static final double BORDER_EXTEND_SIZE = 20;
+  private double minBorderExtendSize = 20;
   private OrthoVisGraph ovg;
   private final DrawGraph drawGraph;
   private final Map<Box, Cell> cellMap;
@@ -56,6 +56,8 @@ public abstract class Maze {
     Asserts.nullArgument(drawGraph, "drawGraph");
     this.drawGraph = drawGraph;
     this.cellMap = new LinkedHashMap<>();
+    this.minBorderExtendSize = Math.max(this.minBorderExtendSize,
+                                        drawGraph.getGraphviz().graphAttrs().getNodeSep());
   }
 
   protected void init() {
@@ -132,16 +134,16 @@ public abstract class Maze {
     Double minVer = gridBuilder.minVerAxis();
     Double maxVer = gridBuilder.maxVerAxis();
     if (minHor != null) {
-      gridBuilder.addHorAxis(minHor - BORDER_EXTEND_SIZE);
+      gridBuilder.addHorAxis(minHor - minBorderExtendSize);
     }
     if (maxHor != null) {
-      gridBuilder.addHorAxis(maxHor + BORDER_EXTEND_SIZE);
+      gridBuilder.addHorAxis(maxHor + minBorderExtendSize);
     }
     if (minVer != null) {
-      gridBuilder.addVerAxis(minVer - BORDER_EXTEND_SIZE);
+      gridBuilder.addVerAxis(minVer - minBorderExtendSize);
     }
     if (maxVer != null) {
-      gridBuilder.addVerAxis(maxVer + BORDER_EXTEND_SIZE);
+      gridBuilder.addVerAxis(maxVer + minBorderExtendSize);
     }
   }
 
@@ -328,6 +330,8 @@ public abstract class Maze {
         FlatPoint rightDown = findRightDown(track, horAxis, verAxis);
 
         GridVertex vertex = new GridVertex(leftUp, rightDown);
+//        vertex.leftNo = verAxis.getIdx();
+//        vertex.topNo = horAxis.getIdx();
         ovg.add(vertex);
         vertexMap.put(grid.coordToIdx(horAxis.getIdx(), verAxis.getIdx()), vertex);
         if (pre != null) {
