@@ -87,19 +87,18 @@ public class PortHelper {
     Asserts.nullArgument(drawGraph, "drawGraph");
 
     if (node.isVirtual() || line == null) {
-      return new PortPoint(node.getX(), node.getY(), null);
+      return new PortPoint(node.getX(), node.getY(), false, null);
     }
 
     LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(line);
     if (lineDrawProp == null) {
-      return new PortPoint(node.getX(), node.getY(), null);
+      return new PortPoint(node.getX(), node.getY(), false, null);
     }
 
     String cellId = getCellId(line, node, lineDrawProp);
 
     Port port = getLineEndPointPort(node.getNode(), line, drawGraph, false);
-    FlatPoint flatPoint = endPoint(portClipNode, cellId, port, node.getNode(), drawGraph, node);
-    return new PortPoint(flatPoint.getX(), flatPoint.getY(), port);
+    return endPoint(portClipNode, cellId, port, node.getNode(), drawGraph, node);
   }
 
   public static String getCellId(Line line, DNode node, LineDrawProp lineDrawProp) {
@@ -118,7 +117,7 @@ public class PortHelper {
     return endPoint(true, cellId, port, node, drawGraph, shapePosition);
   }
 
-  public static FlatPoint endPoint(boolean portClipNode, String cellId, Port port, Node node,
+  public static PortPoint endPoint(boolean portClipNode, String cellId, Port port, Node node,
                                    DrawGraph drawGraph, ShapePosition shapePosition) {
     Asserts.nullArgument(node, "node");
     Asserts.nullArgument(shapePosition, "shapePosition");
@@ -141,31 +140,31 @@ public class PortHelper {
 
     if (port == null) {
       if (cell == null) {
-        return new FlatPoint(shapePosition.getX(), shapePosition.getY());
+        return new PortPoint(shapePosition.getX(), shapePosition.getY(), false, null);
       }
 
       FlatPoint center = cell.getCenter(rectangle);
       // Rotation by current shapePosition
       FlipShifterStrategy.movePointOpposite(drawGraph.rankdir(), shapePosition, center);
-      return center;
+      return new PortPoint(center.getX(), center.getY(), true, null);
     }
 
-    FlatPoint portPoint;
+    PortPoint portPoint;
     NodeShape nodeShape = nodeDrawProp.nodeShape();
     if (cell != null) {
       // Cell center point need the original node box to calculated.
       Rectangle cellRect = cell.getCellBox(rectangle);
-      portPoint = new FlatPoint(
+      portPoint = new PortPoint(
           cellRect.getX() + port.horOffset(cellRect),
-          cellRect.getY() + port.verOffset(cellRect)
+          cellRect.getY() + port.verOffset(cellRect), true, port
       );
       rectangle = cellRect;
       nodeShape = cell.getShape() != null ? cell.getShape() : NodeShapeEnum.RECT;
     } else {
       // Calculate the original port point coordinate
-      portPoint = new FlatPoint(
+      portPoint = new PortPoint(
           rectangle.getX() + port.horOffset(rectangle),
-          rectangle.getY() + port.verOffset(rectangle)
+          rectangle.getY() + port.verOffset(rectangle), true, port
       );
     }
 
@@ -188,7 +187,7 @@ public class PortHelper {
     FlatPoint p = AbstractDotLineRouter.straightLineClipShape(rectangle, nodeShape,
                                                               center, portPoint);
     FlipShifterStrategy.movePointOpposite(drawGraph.rankdir(), shapePosition, p);
-    return p;
+    return new PortPoint(p.getX(), p.getY(), true, port);
   }
 
   public static Rectangle getNodeBoxWithRankdir(DrawGraph drawGraph, ShapePosition shapePosition) {
@@ -249,15 +248,22 @@ public class PortHelper {
   public static class PortPoint extends FlatPoint {
 
     private static final long serialVersionUID = 1628364834247941307L;
+    private final boolean havePort;
+
     private final Port port;
 
-    public PortPoint(double height, double width, Port port) {
+    public PortPoint(double height, double width, boolean havePort, Port port) {
       super(height, width);
+      this.havePort = havePort;
       this.port = port;
     }
 
     public Port getPort() {
       return port;
+    }
+
+    public boolean notNodeCenter() {
+      return havePort;
     }
   }
 }

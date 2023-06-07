@@ -45,13 +45,13 @@ public enum Port implements PortPosition {
 
   SOUTH_WEST(7, "sw", new RatioPortPosition(-0.5, 0.5));
 
-  private final PortPosition portPosition;
+  private final RatioPortPosition portPosition;
 
   private final int no;
 
   private final String code;
 
-  Port(int no, String code, PortPosition portPosition) {
+  Port(int no, String code, RatioPortPosition portPosition) {
     this.no = no;
     this.code = code;
     this.portPosition = portPosition;
@@ -97,6 +97,14 @@ public enum Port implements PortPosition {
     Asserts.illegalArgument(no < 0 || no >= Port.values().length,
                             "Port no must between 0 and " + (Port.values().length - 1));
     return Port.values()[no];
+  }
+
+  public double horOffsetRatio() {
+    return portPosition.getxRatio();
+  }
+
+  public double verOffsetRatio() {
+    return portPosition.getyRatio();
   }
 
   public static Port valueOfCode(String code) {

@@ -27,24 +27,26 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import org.graphper.layout.dot.OrthoNodeSizeExpander.OffsetConsumer;
-import org.graphper.layout.dot.PortHelper.PortPoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.graphper.api.Line;
+import org.graphper.api.attributes.Port;
+import org.graphper.api.attributes.Splines;
+import org.graphper.api.ext.Box;
 import org.graphper.def.DedirectedGraph;
 import org.graphper.def.FlatPoint;
 import org.graphper.def.VertexIndex;
-import org.graphper.util.Asserts;
-import org.graphper.util.CollectionUtils;
-import org.graphper.api.Line;
-import org.graphper.api.attributes.Splines;
-import org.graphper.api.ext.Box;
 import org.graphper.draw.LineDrawProp;
+import org.graphper.layout.FlipShifterStrategy;
 import org.graphper.layout.Mark;
 import org.graphper.layout.OrthoVisGraph.GridVertex;
 import org.graphper.layout.dot.DotMaze.GuideInfo;
 import org.graphper.layout.dot.Maze.Cell;
+import org.graphper.layout.dot.OrthoNodeSizeExpander.OffsetConsumer;
+import org.graphper.layout.dot.PortHelper.PortPoint;
 import org.graphper.layout.dot.RankContent.RankNode;
+import org.graphper.util.Asserts;
+import org.graphper.util.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link Splines#ORTHO}.
@@ -405,7 +407,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
 
       // If arrive at destination, terminate the router process
       if (arriveAtDestination(target, vertexDir, toCenter)) {
-        return terminateRouter(edgeSegRecord, fromCenter, toCenter, vertexDir);
+        return terminateRouter(edgeSegRecord, from, target.end, fromCenter, toCenter, vertexDir);
       }
 
       GridVertex right = vertexDir.vertex.getRight();
@@ -425,22 +427,48 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     return null;
   }
 
-  private boolean arriveAtDestination(Target target, VertexDir vertexDir, FlatPoint endPoint) {
-    Integer horDir = horDir(endPoint.getX() - target.end.getX());
-    Integer verDir = verDir(endPoint.getY() - target.end.getY());
+  private void addStartVertexesToQueue(Cell from, Target target, PortPoint fromPoint) {
+    Integer horDir = horDir(fromPoint, from);
+    Integer verDir = verDir(fromPoint, from);
+    for (GridVertex vertex : from.getAxisVertexes()) {
+      if (!vertex.in(fromPoint.getX(), fromPoint.getY())) {
+        continue;
+      }
+
+      addStartVertexesToQueue(horDir, verDir, from, fromPoint.notNodeCenter(), target, vertex);
+    }
+  }
+
+  private void addStartVertexesToQueue(Integer horDir, Integer verDir, Cell from,
+                                       boolean havePort, Target target, GridVertex vertex) {
+    int dir = getCellInternalNodeDir(vertex);
+    if (havePort && isNotExpectDir(horDir, dir) && isNotExpectDir(verDir, dir)) {
+      return;
+    }
+
+    VertexDir v = new VertexDir(dir, null, vertex, target);
+    v.centering = FlatPoint.twoPointDistance(vertex.getX(), vertex.getY(), from.getX(),
+                                             from.getY());
+    pathContent.offer(v);
+  }
+
+  private boolean arriveAtDestination(Target target, VertexDir vertexDir, PortPoint endPoint) {
+    Integer horDir = horDir(endPoint, target.end);
+    Integer verDir = verDir(endPoint, target.end);
     if (!target.end.in(endPoint.getX(), endPoint.getY())) {
       return false;
     }
 
-    if (isNotContrary(horDir, vertexDir.dir) || isNotContrary(verDir, vertexDir.dir)) {
+    if (endPoint.notNodeCenter() && isNotContrary(horDir, vertexDir.dir)
+        && isNotContrary(verDir, vertexDir.dir)) {
       return false;
     }
     return target.end.in(vertexDir.vertex.getX(), vertexDir.vertex.getY())
         && vertexDir.vertex.isNodeInternal();
   }
 
-  private EdgeDraw terminateRouter(EdgeSegRecord edgeSegRecord, PortPoint fromCenter,
-                                   PortPoint toCenter, VertexDir end) {
+  private EdgeDraw terminateRouter(EdgeSegRecord edgeSegRecord, Cell from, Cell to,
+                                   PortPoint fromCenter, PortPoint toCenter, VertexDir end) {
     VertexDir current = end;
     // The edge segment connect node "to" center and node border point
     EdgeSeg edgeSeg = null;
@@ -480,15 +508,15 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       current = current.parent;
     } while (current != null);
 
-    adjustPortSeg(fromCenter, edgeSeg, true);
-    adjustPortSeg(toCenter, lastSeg, false);
+    adjustPortSeg(fromCenter, edgeSeg, from);
+    adjustPortSeg(toCenter, lastSeg, to);
 
     return new EdgeDraw(edgeSeg);
   }
 
-  private static void adjustPortSeg(PortPoint portPoint, EdgeSeg edgeSeg, boolean isFrom) {
+  private static void adjustPortSeg(PortPoint portPoint, EdgeSeg edgeSeg, Cell targetCell) {
     double move;
-    edgeSeg.canNotMove = portPoint.getPort() != null;
+    edgeSeg.canNotMove = portPoint.notNodeCenter();
     if (!edgeSeg.canNotMove) {
       return;
     }
@@ -499,20 +527,21 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       move = portPoint.getY();
       edgeSeg.moveAxis(portPoint.getX() - edgeSeg.axis);
     }
-    if (isFrom) {
-      if (edgeSeg.nextAtStart()) {
-        edgeSeg.end = move;
-      } else {
-        edgeSeg.start = move;
-      }
+
+    boolean moveStart;
+    if (edgeSeg.isHor) {
+      moveStart = Math.abs(edgeSeg.start - targetCell.getX())
+          < Math.abs(edgeSeg.end - targetCell.getX());
     } else {
-      if (edgeSeg.preAtStart()) {
-        edgeSeg.end = move;
-      } else {
-        edgeSeg.start = move;
-      }
+      moveStart = Math.abs(edgeSeg.start - targetCell.getY())
+          < Math.abs(edgeSeg.end - targetCell.getY());
     }
 
+    if (moveStart) {
+      edgeSeg.start = move;
+    } else {
+      edgeSeg.end = move;
+    }
   }
 
   private void setEdgeRecord(EdgeSegRecord edgeSegRecord, VertexDir current, EdgeSeg edgeSeg) {
@@ -556,57 +585,56 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     pathContent.offer(vertexDir);
   }
 
-  private void addStartVertexesToQueue(Cell from, Target target, FlatPoint fromPoint) {
-    Integer horDir = horDir(fromPoint.getX() - from.getX());
-    Integer verDir = verDir(fromPoint.getY() - from.getY());
-    for (GridVertex vertex : from.getAxisVertexes()) {
-      if (!vertex.in(fromPoint.getX(), fromPoint.getY())) {
-        continue;
-      }
-
-      addStartVertexesToQueue(horDir, verDir, from, target, vertex);
-    }
-  }
-
-  private void addStartVertexesToQueue(Integer horDir, Integer verDir, Cell from,
-                                       Target target, GridVertex vertex) {
-    int dir = getCellInternalNodeDir(vertex);
-    if (isNotExpectDir(horDir, dir) || isNotExpectDir(verDir, dir)) {
-      return;
-    }
-
-    VertexDir v = new VertexDir(dir, null, vertex, target);
-    v.centering = FlatPoint.twoPointDistance(vertex.getX(), vertex.getY(),
-                                             from.getX(), from.getY());
-    pathContent.offer(v);
-  }
-
   private boolean isNotContrary(Integer srcDir, int dir) {
     if (srcDir == null) {
-      return false;
+      return true;
     }
     return !isContrary(srcDir, dir);
   }
 
   private boolean isNotExpectDir(Integer expectDir1, int dir) {
-    return Objects.nonNull(expectDir1) && !Objects.equals(dir, expectDir1);
+    return Objects.isNull(expectDir1) || !Objects.equals(dir, expectDir1);
   }
 
-  private Integer horDir(double xv) {
-    if (xv < -0.01) {
+  private Integer horDir(PortPoint portPoint, Cell nodeCell) {
+    if (portPoint.getPort() == null) {
+      double xv = portPoint.getX() - nodeCell.getX();
+      if (xv < -0.01) {
+        return LEFT;
+      }
+      if (xv > 0.01) {
+        return RIGHT;
+      }
+      return null;
+    }
+
+    Port port = FlipShifterStrategy.movePort(drawGraph, portPoint.getPort());
+    if (port.horOffsetRatio() < 0) {
       return LEFT;
     }
-    if (xv > 0.01) {
+    if (port.horOffsetRatio() > 0) {
       return RIGHT;
     }
     return null;
   }
 
-  private Integer verDir(double yv) {
-    if (yv < -0.01) {
+  private Integer verDir(PortPoint portPoint, Cell nodeCell) {
+    if (portPoint.getPort() == null) {
+      double yv = portPoint.getY() - nodeCell.getY();
+      if (yv < -0.01) {
+        return UP;
+      }
+      if (yv > 0.01) {
+        return DOWN;
+      }
+      return null;
+    }
+
+    Port port = FlipShifterStrategy.movePort(drawGraph, portPoint.getPort());
+    if (port.verOffsetRatio() < 0) {
       return UP;
     }
-    if (yv > 0.01) {
+    if (port.verOffsetRatio() > 0) {
       return DOWN;
     }
     return null;
@@ -1160,15 +1188,9 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       if (start == null || end == null) {
         return;
       }
-      if (newEndpoint > start && newEndpoint < end) {
-        if (Objects.equals(oldEndPoint, start)) {
-          start = newEndpoint;
-        } else {
-          end = newEndpoint;
-        }
-      } else {
-        addPoint(newEndpoint);
-      }
+      double other = Objects.equals(oldEndPoint, start) ? end : start;
+      start = Math.min(newEndpoint, other);
+      end = Math.max(newEndpoint, other);
     }
 
     private void addVertex(VertexDir vertexDir) {
@@ -1191,23 +1213,6 @@ class OrthogonalRouter extends AbstractDotLineRouter {
         return false;
       }
       return Objects.equals(next.axis, start);
-    }
-
-    private Double closerEnd(double target) {
-      if (start == null) {
-        return end;
-      }
-      if (end == null) {
-        return start;
-      }
-      if (target >= end) {
-        return end;
-      }
-      if (target >= start) {
-        return start;
-      }
-
-      return Math.abs(target - start) > Math.abs(target - end) ? end : start;
     }
 
     private void addPoint(double point) {

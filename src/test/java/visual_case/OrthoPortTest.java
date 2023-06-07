@@ -18,13 +18,17 @@ package visual_case;
 
 import helper.GraphvizVisual;
 import org.graphper.api.Graphviz;
+import org.graphper.api.Graphviz.GraphvizBuilder;
 import org.graphper.api.Line;
 import org.graphper.api.Node;
+import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
+import org.graphper.api.attributes.Rank;
+import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.attributes.Splines;
 import org.junit.jupiter.api.Test;
 
-public class OrhoPortTest extends GraphvizVisual {
+public class OrthoPortTest extends GraphvizVisual {
 
   @Test
   public void portCase1() {
@@ -106,7 +110,54 @@ public class OrhoPortTest extends GraphvizVisual {
                      .build())
         .addLine(Line.builder(c, d)
                      .tailPort(Port.NORTH).headPort(Port.WEST)
-//                     .label("666")
+                     .label("666")
+                     .build())
+        .build();
+
+    visual(graphviz);
+  }
+
+  @Test
+  public void portTestCase3() {
+    Node a = Node.builder().shape(NodeShapeEnum.RECORD).label("{<p1>p1||<p3>p3}").build();
+    Node b = Node.builder().shape(NodeShapeEnum.RECORD).label("{<p4>p4||<p2>p2}").build();
+
+    GraphvizBuilder graphvizBuilder = Graphviz.digraph()
+        .showGrid(true)
+        .splines(Splines.ORTHO)
+        .addLine(Line.builder(a, b)
+                     .label("p1 -> p2")
+                     .tailCell("p1").headCell("p2")
+                     .tailPort(Port.NORTH)
+                     .headPort(Port.SOUTH_EAST)
+                     .build())
+        .addLine(Line.builder(a, b)
+                     .label("p3 -> p4")
+                     .tailCell("p3").headCell("p4")
+                     .tailPort(Port.WEST)
+                     .headPort(Port.WEST)
+                     .build())
+        .startSub()
+        .rank(Rank.SAME)
+        .addNode(a, b)
+        .endSub();
+
+    visual(graphvizBuilder.build());
+    visual(graphvizBuilder.rankdir(Rankdir.LR).build());
+    visual(graphvizBuilder.rankdir(Rankdir.RL).build());
+    visual(graphvizBuilder.rankdir(Rankdir.BT).build());
+  }
+
+  @Test
+  public void portTestCase4() {
+    Node a = Node.builder().label("a").build();
+    Node b = Node.builder().label("b").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .splines(Splines.ORTHO)
+        .addLine(Line.builder(a, b)
+                     .tailPort(Port.NORTH)
+                     .headPort(Port.NORTH_WEST)
                      .build())
         .build();
 

@@ -136,7 +136,7 @@ public interface Box {
    *         false - not in box area
    */
   default boolean in(double x, double y) {
-    return x >= getLeftBorder() && x <= getRightBorder()
-        && y >= getUpBorder() && y <= getDownBorder();
+    return x >= getLeftBorder() - 0.1 && x <= getRightBorder() + 0.1
+        && y >= getUpBorder() - 0.1 && y <= getDownBorder() + 0.1;
   }
 }
