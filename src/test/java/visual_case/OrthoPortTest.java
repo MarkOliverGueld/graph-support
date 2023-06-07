@@ -154,6 +154,7 @@ public class OrthoPortTest extends GraphvizVisual {
     Node b = Node.builder().label("b").build();
 
     Graphviz graphviz = Graphviz.digraph()
+        .showGrid(true)
         .splines(Splines.ORTHO)
         .addLine(Line.builder(a, b)
                      .tailPort(Port.NORTH)

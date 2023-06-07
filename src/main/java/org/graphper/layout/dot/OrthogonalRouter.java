@@ -399,7 +399,9 @@ class OrthogonalRouter extends AbstractDotLineRouter {
      *
      * Must have an estimate ^h(n) of h(n).
      */
+    int itr = 0;
     while (pathContent.isNotEmpty()) {
+      itr++;
       VertexDir vertexDir = pathContent.poll();
       if (vertexDir == null) {
         continue;
@@ -455,16 +457,14 @@ class OrthogonalRouter extends AbstractDotLineRouter {
   private boolean arriveAtDestination(Target target, VertexDir vertexDir, PortPoint endPoint) {
     Integer horDir = horDir(endPoint, target.end);
     Integer verDir = verDir(endPoint, target.end);
-    if (!target.end.in(endPoint.getX(), endPoint.getY())) {
-      return false;
-    }
 
     if (endPoint.notNodeCenter() && isNotContrary(horDir, vertexDir.dir)
         && isNotContrary(verDir, vertexDir.dir)) {
       return false;
     }
-    return target.end.in(vertexDir.vertex.getX(), vertexDir.vertex.getY())
-        && vertexDir.vertex.isNodeInternal();
+    GridVertex vertex = vertexDir.vertex;
+    return target.end.in(vertex.getX(), vertex.getY()) && vertex.isNodeInternal()
+        && vertex.in(endPoint.getX(), endPoint.getY());
   }
 
   private EdgeDraw terminateRouter(EdgeSegRecord edgeSegRecord, Cell from, Cell to,
