@@ -132,7 +132,7 @@ public interface Box {
    *
    * @param x x-coordinate
    * @param y y-coordinate
-   * @return true - in box area <br/>
+   * @return true - in box area
    *         false - not in box area
    */
   default boolean in(double x, double y) {
