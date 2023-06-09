@@ -58,7 +58,7 @@ public class PortNodeSizeExpanderV2 extends NodeSizeExpander {
     initExpander(drawGraph, groupSelfLine(drawGraph, node, nodeDrawProp));
   }
 
-  private Map<GroupKey, List<GroupEntry>> groupSelfLine(DrawGraph drawGraph, DNode node,
+  protected Map<GroupKey, List<GroupEntry>> groupSelfLine(DrawGraph drawGraph, DNode node,
                                                         NodeDrawProp nodeDrawProp) {
     Map<GroupKey, List<GroupEntry>> selfLineGroup = new HashMap<>(1);
 
@@ -405,7 +405,7 @@ public class PortNodeSizeExpanderV2 extends NodeSizeExpander {
     return RIGHT;
   }
 
-  private static class GroupEntry {
+  protected static class GroupEntry {
 
     private final GroupKey groupKey;
 
@@ -417,9 +417,13 @@ public class PortNodeSizeExpanderV2 extends NodeSizeExpander {
       this.groupKey = groupKey;
       this.line = line;
     }
+
+    public DLine getLine() {
+      return line;
+    }
   }
 
-  private static class GroupKey {
+  protected static class GroupKey {
 
     private Port tailPort;
 
@@ -433,11 +437,37 @@ public class PortNodeSizeExpanderV2 extends NodeSizeExpander {
 
     private FlatPoint headPoint;
 
-    private boolean samePoint() {
+    public Port getTailPort() {
+      return tailPort;
+    }
+
+    public Port getHeadPort() {
+      return headPort;
+    }
+
+    public Cell getTailCell() {
+      return tailCell;
+    }
+
+    public Cell getHeadCell() {
+      return headCell;
+    }
+
+    public boolean samePoint() {
       return tailCell == headCell && tailPort == headPort;
     }
 
-    private boolean isOnlySameHor() {
+    public FlatPoint getTailPoint() {
+      Asserts.illegalArgument(tailPoint == null, "GroupKey Not Ready");
+      return tailPoint.clone();
+    }
+
+    public FlatPoint getHeadPoint() {
+      Asserts.illegalArgument(headPoint == null, "GroupKey Not Ready");
+      return headPoint.clone();
+    }
+
+    public boolean isOnlySameHor() {
       if (samePoint() || tailCell != headCell) {
         return false;
       }
@@ -450,7 +480,7 @@ public class PortNodeSizeExpanderV2 extends NodeSizeExpander {
           && !ValueUtils.approximate(tailPoint.getX(), headPoint.getX(), 0.1);
     }
 
-    private boolean isOnlySameVer() {
+    public boolean isOnlySameVer() {
       if (samePoint() || tailCell != headCell) {
         return false;
       }
@@ -463,22 +493,16 @@ public class PortNodeSizeExpanderV2 extends NodeSizeExpander {
           && !ValueUtils.approximate(tailPoint.getY(), headPoint.getY(), 0.1);
     }
 
-    private FlatPoint getTailPoint() {
-      Asserts.illegalArgument(tailPoint == null, "GroupKey Not Ready");
-      return tailPoint.clone();
-    }
-
-    private FlatPoint getHeadPoint() {
-      Asserts.illegalArgument(headPoint == null, "GroupKey Not Ready");
-      return headPoint.clone();
-    }
-
-    private boolean sameCell() {
+    public boolean sameCell() {
       return tailCell == headCell;
     }
 
-    private boolean notSameCell() {
+    public boolean notSameCell() {
       return !sameCell();
+    }
+
+    public boolean havePortOrCell() {
+      return tailPort != null || headPort != null || tailCell != null || headCell != null;
     }
 
     @Override

@@ -109,6 +109,11 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       return;
     }
 
+    /*
+     * 1. Group self lines by port;
+     * 2. Self lines which do not have port use OrthoNodeSizeExpander;
+     * 3. Self lines which have port use PortNodeSizeExpanderV2;
+     */
     double nodeInternalInterval = node.getWidth() / (node.getSelfLoopCount() + 1);
     OffsetConsumer consumer = (lineNo, line, topOffset, bottomOffset, rightOffset) -> {
       LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(line.getLine());
@@ -135,7 +140,10 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       }
     };
 
-    OrthoNodeSizeExpander.linePos(node, consumer);
+    NodeSizeExpander nodeSizeExpander = node.getNodeSizeExpander();
+    Asserts.illegalArgument(!(nodeSizeExpander instanceof OrthoNodeSizeExpanderV2), "error type");
+    OrthoNodeSizeExpanderV2 sizeExpander = (OrthoNodeSizeExpanderV2) nodeSizeExpander;
+    sizeExpander.drawSelfLine(drawGraph);
   }
 
   private void generateEdge() {

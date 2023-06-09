@@ -327,12 +327,16 @@ class DNode extends VertexIndex implements Box, ShapePosition {
 
     Splines splines = drawGraph.getGraphviz().graphAttrs().getSplines();
     if (splines == Splines.ORTHO) {
-      nodeSizeExpander = new OrthoNodeSizeExpander(this);
+      nodeSizeExpander = new OrthoNodeSizeExpanderV2(drawGraph, this);
     } else if (drawGraph.usePortAxisExpander()) {
       nodeSizeExpander = new PortNodeSizeExpander(drawGraph, this);
     } else {
       nodeSizeExpander = new PortNodeSizeExpanderV2(drawGraph, this);
     }
+  }
+
+  NodeSizeExpander getNodeSizeExpander() {
+    return nodeSizeExpander;
   }
 
   DLine getFlatLabelLine() {

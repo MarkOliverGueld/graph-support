@@ -152,6 +152,8 @@ public class OrthoPortTest extends GraphvizVisual {
   public void portTestCase4() {
     Node a = Node.builder().label("a").build();
     Node b = Node.builder().label("b").build();
+    Node c = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f1>|<f2>}").build();
+    Node d = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f3>|<f4>}").build();
 
     Graphviz graphviz = Graphviz.digraph()
         .showGrid(true)
@@ -160,6 +162,62 @@ public class OrthoPortTest extends GraphvizVisual {
                      .tailPort(Port.NORTH)
                      .headPort(Port.NORTH_WEST)
                      .build())
+        .addLine(Line.builder(c, d)
+                     .tailCell("f1")
+                     .headCell("f3")
+                     .tailPort(Port.WEST)
+                     .headPort(Port.WEST)
+                     .label("foo")
+                     .build())
+        .addLine(Line.builder(c, d)
+                     .tailCell("f2")
+                     .headCell("f4")
+                     .tailPort(Port.EAST)
+                     .headPort(Port.EAST)
+                     .label("bar")
+                     .build())
+        .build();
+
+    visual(graphviz);
+  }
+
+  @Test
+  public void portTestCase5() {
+    Node a = Node.builder().label("a").shape(NodeShapeEnum.RECT).build();
+    Node b = Node.builder().shape(NodeShapeEnum.RECORD).label("<A>A|B|{C|{D|<E>E}}|F").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+//        .showGrid(true)
+        .splines(Splines.ORTHO)
+        .addLine(a, a)
+        .addLine(a, a)
+        .addLine(a, a)
+        .addLine(Line.builder(a, a).label("aaaa").build())
+        .addLine(a, a)
+        .addLine(a, a)
+        .addLine(Line.builder(a, a)
+                     .tailPort(Port.NORTH)
+                     .headPort(Port.NORTH_WEST)
+                     .label("fffffffffffffffffffff")
+                     .build())
+        .addLine(Line.builder(a, a)
+                     .tailPort(Port.NORTH)
+                     .headPort(Port.NORTH_WEST)
+                     .label("fffffffffffffffffffff")
+                     .build())
+        .addNode(Node.builder().label("c").build())
+//        .addLine(Line.builder(a, a)
+//                     .tailPort(Port.NORTH)
+//                     .headPort(Port.NORTH_WEST)
+//                     .build())
+//        .addLine(Line.builder(b, b).controlPoints(true).build())
+//        .addLine(
+//            Line.builder(b, b)
+//                .tailPort(Port.NORTH_EAST)
+//                .tailCell("E")
+//                .headPort(Port.SOUTH)
+//                .build()
+//        )
         .build();
 
     visual(graphviz);
