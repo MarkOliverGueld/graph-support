@@ -40,7 +40,6 @@ import org.graphper.layout.Mark;
 import org.graphper.layout.OrthoVisGraph.GridVertex;
 import org.graphper.layout.dot.DotMaze.GuideInfo;
 import org.graphper.layout.dot.Maze.Cell;
-import org.graphper.layout.dot.OrthoNodeSizeExpander.OffsetConsumer;
 import org.graphper.layout.dot.PortHelper.PortPoint;
 import org.graphper.layout.dot.RankContent.RankNode;
 import org.graphper.util.Asserts;
@@ -109,40 +108,9 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       return;
     }
 
-    /*
-     * 1. Group self lines by port;
-     * 2. Self lines which do not have port use OrthoNodeSizeExpander;
-     * 3. Self lines which have port use PortNodeSizeExpanderV2;
-     */
-    double nodeInternalInterval = node.getWidth() / (node.getSelfLoopCount() + 1);
-    OffsetConsumer consumer = (lineNo, line, topOffset, bottomOffset, rightOffset) -> {
-      LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(line.getLine());
-      if (lineDrawProp == null || lineDrawProp.isInit()) {
-        return;
-      }
-
-      double left = node.getRightBorder() - nodeInternalInterval * (lineNo + 1);
-      double right = node.getRightBorder() + rightOffset;
-      double top = node.getUpBorder() - topOffset;
-      double bottom = node.getDownBorder() + bottomOffset;
-
-      FlatPoint center = new FlatPoint(left, node.getY());
-      lineDrawProp.add(center);
-      lineDrawProp.add(new FlatPoint(left, top));
-      lineDrawProp.add(new FlatPoint(right, top));
-      lineDrawProp.add(new FlatPoint(right, bottom));
-      lineDrawProp.add(new FlatPoint(left, bottom));
-      lineDrawProp.add(center);
-
-      FlatPoint labelSize = line.getLabelSize();
-      if (labelSize != null) {
-        lineDrawProp.setLabelCenter(new FlatPoint(right - labelSize.getWidth() / 2, node.getY()));
-      }
-    };
-
     NodeSizeExpander nodeSizeExpander = node.getNodeSizeExpander();
-    Asserts.illegalArgument(!(nodeSizeExpander instanceof OrthoNodeSizeExpanderV2), "error type");
-    OrthoNodeSizeExpanderV2 sizeExpander = (OrthoNodeSizeExpanderV2) nodeSizeExpander;
+    Asserts.illegalArgument(!(nodeSizeExpander instanceof OrthoNodeSizeExpander), "error type");
+    OrthoNodeSizeExpander sizeExpander = (OrthoNodeSizeExpander) nodeSizeExpander;
     sizeExpander.drawSelfLine(drawGraph);
   }
 
