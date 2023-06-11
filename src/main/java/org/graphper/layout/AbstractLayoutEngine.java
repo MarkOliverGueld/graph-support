@@ -549,11 +549,6 @@ public abstract class AbstractLayoutEngine implements LayoutEngine {
       lineId.put(line, nz);
     }
 
-    if ( (lineAttrs.getTailCell() != null && lineAttrs.getTailPort() == null)
-        || (lineAttrs.getHeadCell() != null && lineAttrs.getHeadPort() == null)) {
-      attachment.addAutoSetPortLine(lineDrawProp);
-    }
-
     // Line consume
     consumerLine(line, attachment, drawGraph);
   }

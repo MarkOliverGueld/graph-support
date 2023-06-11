@@ -21,11 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeSet;
 import org.apache_gs.commons.lang3.StringUtils;
 import org.graphper.api.Assemble;
@@ -35,7 +32,6 @@ import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
 import org.graphper.api.LineAttrs;
 import org.graphper.api.Node;
-import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.attributes.Splines;
 import org.graphper.def.EdgeDedigraph;
@@ -45,10 +41,7 @@ import org.graphper.draw.DrawGraph;
 import org.graphper.draw.GraphvizDrawProp;
 import org.graphper.draw.LineDrawProp;
 import org.graphper.draw.NodeDrawProp;
-import org.graphper.draw.Rectangle;
 import org.graphper.layout.AbstractLayoutEngine;
-import org.graphper.layout.Cell;
-import org.graphper.layout.Cell.RootCell;
 import org.graphper.layout.FlipShifterStrategy;
 import org.graphper.layout.LayoutAttach;
 import org.graphper.layout.ShifterStrategy;
@@ -59,9 +52,7 @@ import org.graphper.layout.dot.PolyLineRouter.PolyLineRouterFactory;
 import org.graphper.layout.dot.RoundedRouter.RoundedRouterFactory;
 import org.graphper.layout.dot.SplineRouter.SplineRouterFactory;
 import org.graphper.util.Asserts;
-import org.graphper.util.ClassUtils;
 import org.graphper.util.CollectionUtils;
-import org.graphper.util.ValueUtils;
 
 /**
  * Hierarchical or layered drawings of directed graphs. The layout algorithm aims edges in the same
@@ -262,9 +253,6 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
     // Handle various line label.
     new LabelSupplement(rankContent, dotAttachment, digraphProxy);
 
-    // If cell not set port, auto generate port for line to get more reasonable routing
-    autoGeneratePort(dotAttachment);
-
     // Node coordinate
     if (Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("dot.coordinate.v1"))) {
       new Coordinate(graphAttrs.getNslimit(), rankContent, dotAttachment, digraphProxy);
@@ -315,71 +303,6 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
           selfLoopLine.from().addSelfLine(selfLoopLine);
         }
       }
-    }
-  }
-
-  private void autoGeneratePort(DotAttachment attach) {
-    List<LineDrawProp> autoSetPortLines = attach.getAutoSetPortLines();
-    if (CollectionUtils.isEmpty(autoSetPortLines)) {
-      return;
-    }
-
-    Map<String, LinePortGroup> tailPortGroup = null;
-    Map<String, LinePortGroup> headPortGroup = null;
-
-    DrawGraph drawGraph = attach.getDrawGraph();
-    for (LineDrawProp lineDrawProp : autoSetPortLines) {
-      Line line = lineDrawProp.getLine();
-      LineAttrs lineAttrs = lineDrawProp.lineAttrs();
-
-      NodeDrawProp tail = drawGraph.getNodeDrawProp(line.tail());
-      NodeDrawProp head = drawGraph.getNodeDrawProp(line.head());
-      if (lineAttrs.getTailCell() != null && lineAttrs.getTailPort() == null) {
-        if (tailPortGroup == null) {
-          tailPortGroup = new LinkedHashMap<>();
-        }
-        LinePortGroup linePortGroup = tailPortGroup.computeIfAbsent(
-            tail.hashCode() + lineAttrs.getTailCell(), n -> new LinePortGroup());
-        linePortGroup.addLine(lineDrawProp, attach.getDotDigraph());
-      }
-
-      if (lineAttrs.getHeadCell() != null && lineAttrs.getHeadPort() == null) {
-        if (headPortGroup == null) {
-          headPortGroup = new LinkedHashMap<>();
-        }
-        LinePortGroup linePortGroup = headPortGroup.computeIfAbsent(
-            head.hashCode() + lineAttrs.getHeadCell(), n -> new LinePortGroup());
-        linePortGroup.addLine(lineDrawProp, attach.getDotDigraph());
-      }
-    }
-
-    if (tailPortGroup != null) {
-      for (Entry<String, LinePortGroup> tails : tailPortGroup.entrySet()) {
-        LinePortGroup linePortGroup = tails.getValue();
-      }
-    }
-  }
-
-  private Cell getCell(String cellId, NodeDrawProp node) {
-    if (cellId == null) {
-      return null;
-    }
-    RootCell root = node.getCell();
-    if (root == null) {
-      return null;
-    }
-    return root.getCellById(cellId);
-  }
-
-  private void resetLinePort(LineAttrs lineAttrs, Port port, boolean isTail) {
-    try {
-      if (isTail) {
-        ClassUtils.modifyField(lineAttrs, "tailPort", port);
-      } else {
-        ClassUtils.modifyField(lineAttrs, "headPort", port);
-      }
-    } catch (IllegalAccessException | NoSuchFieldException e) {
-      throw new RuntimeException(e);
     }
   }
 
@@ -452,94 +375,6 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
       DNode lh = digraph.getDNode(l.getLine().head());
       DNode rh = digraph.getDNode(r.getLine().head());
       return Integer.compare(lh.getRankIndex(), rh.getRankIndex());
-    }
-  }
-
-  static class PortPoll implements Iterable<Port> {
-
-    private int pos;
-
-    private List<Port> ports;
-
-    static PortPoll newPort(Cell cell, NodeDrawProp node) {
-      PortPoll portPoll = new PortPoll();
-      Rectangle cellBox = cell.getCellBox(node);
-      if (ValueUtils.approximate(cellBox.getLeftBorder(), node.getLeftBorder(), 0.01)) {
-        portPoll.addPort(Port.WEST);
-      }
-      if (ValueUtils.approximate(cellBox.getRightBorder(), node.getRightBorder(), 0.01)) {
-        portPoll.addPort(Port.EAST);
-      }
-      if (ValueUtils.approximate(cellBox.getUpBorder(), node.getUpBorder(), 0.01)) {
-        portPoll.addPort(Port.NORTH);
-      }
-      if (ValueUtils.approximate(cellBox.getDownBorder(), node.getDownBorder(), 0.01)) {
-        portPoll.addPort(Port.SOUTH);
-      }
-      return portPoll;
-    }
-
-    private void addPort(Port port) {
-      if (ports == null) {
-        ports = new ArrayList<>(3);
-      }
-      ports.add(port);
-    }
-
-    Port nextPort() {
-      if (CollectionUtils.isEmpty(ports)) {
-        return null;
-      }
-      Port port = ports.get(pos);
-      pos++;
-      if (pos == ports.size()) {
-        pos = 0;
-      }
-      return port;
-    }
-
-    int size() {
-      if (CollectionUtils.isEmpty(ports)) {
-        return 0;
-      }
-      return ports.size();
-    }
-
-    @Override
-    public Iterator<Port> iterator() {
-      if (CollectionUtils.isEmpty(ports)) {
-        return Collections.emptyIterator();
-      }
-      return new PollPortIterator(this);
-    }
-
-    private static class PollPortIterator implements Iterator<Port> {
-
-      private boolean start;
-
-      private final int cycleStartPos;
-
-      private final PortPoll portPoll;
-
-      private PollPortIterator(PortPoll portPoll) {
-        this.portPoll = portPoll;
-        this.cycleStartPos = portPoll.pos;
-      }
-
-      @Override
-      public boolean hasNext() {
-        if (portPoll.size() == 0) {
-          return false;
-        }
-        return !start || portPoll.pos != cycleStartPos;
-      }
-
-      @Override
-      public Port next() {
-        Asserts.illegalArgument(!hasNext(), "Do not have elements");
-        start = true;
-        return portPoll.nextPort();
-      }
     }
   }
 }

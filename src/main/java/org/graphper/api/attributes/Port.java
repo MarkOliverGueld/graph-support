@@ -29,7 +29,7 @@ import org.graphper.util.Asserts;
  */
 public enum Port implements PortPosition {
 
-  CENTER(0, "c", new RatioPortPosition(0, 0)),
+  CENTER(-1, "c", new RatioPortPosition(0, 0)),
 
   WEST(0, "w", new RatioPortPosition(-0.5, 0)),
 
@@ -79,13 +79,13 @@ public enum Port implements PortPosition {
 
   public Port pre() {
     if (no == 0) {
-      return valueOf(maxNo());
+      return valueOf(maxNo() - 1);
     }
     return valueOf(no - 1);
   }
 
   public Port next() {
-    if (no == maxNo()) {
+    if (no == maxNo() - 1) {
       return valueOf(0);
     }
     return valueOf(no + 1);
@@ -98,7 +98,7 @@ public enum Port implements PortPosition {
   public static Port valueOf(int no) {
     Asserts.illegalArgument(no < 0 || no >= Port.values().length,
                             "Port no must between 0 and " + (Port.values().length - 1));
-    return Port.values()[no];
+    return Port.values()[no + 1];
   }
 
   public double horOffsetRatio() {

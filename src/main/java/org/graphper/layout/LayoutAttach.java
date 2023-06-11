@@ -16,25 +16,5 @@
 
 package org.graphper.layout;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.graphper.draw.LineDrawProp;
-
 public class LayoutAttach {
-
-  private List<LineDrawProp> autoSetPortLines;
-
-  public void addAutoSetPortLine(LineDrawProp line) {
-    if (line == null) {
-      return;
-    }
-    if (autoSetPortLines == null) {
-      autoSetPortLines = new ArrayList<>(2);
-    }
-    autoSetPortLines.add(line);
-  }
-
-  public List<LineDrawProp> getAutoSetPortLines() {
-    return autoSetPortLines;
-  }
 }
