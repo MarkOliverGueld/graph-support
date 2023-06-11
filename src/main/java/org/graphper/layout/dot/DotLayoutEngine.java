@@ -22,8 +22,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeSet;
 import org.apache_gs.commons.lang3.StringUtils;
 import org.graphper.api.Assemble;
 import org.graphper.api.GraphAttrs;
@@ -321,45 +324,40 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
       return;
     }
 
-    Map<String, PortPoll> tailPortPoll = null;
-    Map<String, PortPoll> headPortPoll = null;
+    Map<String, LinePortGroup> tailPortGroup = null;
+    Map<String, LinePortGroup> headPortGroup = null;
 
     DrawGraph drawGraph = attach.getDrawGraph();
-    Iterator<LineDrawProp> iterator = autoSetPortLines.iterator();
-    while (iterator.hasNext()) {
-      LineDrawProp lineDrawProp = iterator.next();
+    for (LineDrawProp lineDrawProp : autoSetPortLines) {
       Line line = lineDrawProp.getLine();
       LineAttrs lineAttrs = lineDrawProp.lineAttrs();
 
       NodeDrawProp tail = drawGraph.getNodeDrawProp(line.tail());
       NodeDrawProp head = drawGraph.getNodeDrawProp(line.head());
-      if (lineAttrs.getTailCell() != null) {
-        Cell cell = getCell(lineAttrs.getTailCell(), tail);
-        if (cell != null) {
-          if (tailPortPoll == null) {
-            tailPortPoll = new HashMap<>();
-          }
-          PortPoll portPoll = tailPortPoll.computeIfAbsent(
-              tail.hashCode() + lineAttrs.getTailCell(),
-              n -> PortPoll.newPort(cell, tail));
-
-          Port headPort = lineAttrs.getHeadPort();
-          if (headPort != null) {
-            for (Port port : portPoll) {
-              if (port == headPort) {
-                resetLinePort(lineAttrs, headPort, true);
-                break;
-              }
-            }
-          } else {
-
-          }
+      if (lineAttrs.getTailCell() != null && lineAttrs.getTailPort() == null) {
+        if (tailPortGroup == null) {
+          tailPortGroup = new LinkedHashMap<>();
         }
+        LinePortGroup linePortGroup = tailPortGroup.computeIfAbsent(
+            tail.hashCode() + lineAttrs.getTailCell(), n -> new LinePortGroup());
+        linePortGroup.addLine(lineDrawProp, attach.getDotDigraph());
       }
 
-      iterator.remove();
+      if (lineAttrs.getHeadCell() != null && lineAttrs.getHeadPort() == null) {
+        if (headPortGroup == null) {
+          headPortGroup = new LinkedHashMap<>();
+        }
+        LinePortGroup linePortGroup = headPortGroup.computeIfAbsent(
+            head.hashCode() + lineAttrs.getHeadCell(), n -> new LinePortGroup());
+        linePortGroup.addLine(lineDrawProp, attach.getDotDigraph());
+      }
     }
 
+    if (tailPortGroup != null) {
+      for (Entry<String, LinePortGroup> tails : tailPortGroup.entrySet()) {
+        LinePortGroup linePortGroup = tails.getValue();
+      }
+    }
   }
 
   private Cell getCell(String cellId, NodeDrawProp node) {
@@ -426,6 +424,35 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
 
     double fontSize = lineAttrs.getFontSize() != null ? lineAttrs.getFontSize() : 0D;
     return labelContainer(label, lineAttrs.getFontName(), fontSize);
+  }
+
+  private static class LinePortGroup {
+
+    private TreeSet<LineDrawProp> sameRankLines;
+
+    private TreeSet<LineDrawProp> diffRankLines;
+
+    private void addLine(LineDrawProp line, DotDigraph digraph) {
+      DNode tail = digraph.getDNode(line.getLine().tail());
+      DNode head = digraph.getDNode(line.getLine().head());
+      if (tail.getRank() == head.getRank()) {
+        if (sameRankLines == null) {
+          sameRankLines = new TreeSet<>((l, r) -> compare(l, r, digraph));
+        }
+        sameRankLines.add(line);
+      } else {
+        if (diffRankLines == null) {
+          diffRankLines = new TreeSet<>((l, r) -> compare(l, r, digraph));
+        }
+        diffRankLines.add(line);
+      }
+    }
+
+    private int compare(LineDrawProp l, LineDrawProp r, DotDigraph digraph) {
+      DNode lh = digraph.getDNode(l.getLine().head());
+      DNode rh = digraph.getDNode(r.getLine().head());
+      return Integer.compare(lh.getRankIndex(), rh.getRankIndex());
+    }
   }
 
   static class PortPoll implements Iterable<Port> {
