@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package org.graphper.layout.dot;
+package org.graphper.layout;
 
+import java.util.ArrayList;
 import java.util.List;
-import org.graphper.draw.DrawGraph;
-import org.graphper.layout.LayoutAttach;
-import org.graphper.layout.ShifterStrategy;
+import org.graphper.draw.LineDrawProp;
 
-public class TLayout extends DotLayoutEngine {
+public class LayoutAttach {
 
-  DotAttachment dotAttachment;
+  private List<LineDrawProp> autoSetPortLines;
 
-  @Override
-  public void layout(DrawGraph drawGraph, LayoutAttach attach) {
-    this.dotAttachment = (DotAttachment) attach;
+  public void addAutoSetPortLine(LineDrawProp line) {
+    if (line == null) {
+      return;
+    }
+    if (autoSetPortLines == null) {
+      autoSetPortLines = new ArrayList<>(2);
+    }
+    autoSetPortLines.add(line);
   }
 
-  @Override
-  public List<ShifterStrategy> shifterStrategies(DrawGraph drawGraph) {
-    return super.shifterStrategies(drawGraph);
-  }
-
-  @Override
-  protected void afterRenderShifter(LayoutAttach drawGraph) {
+  public List<LineDrawProp> getAutoSetPortLines() {
+    return autoSetPortLines;
   }
 }

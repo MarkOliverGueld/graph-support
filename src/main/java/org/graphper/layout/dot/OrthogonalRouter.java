@@ -19,6 +19,7 @@ package org.graphper.layout.dot;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,7 @@ import org.graphper.layout.dot.PortHelper.PortPoint;
 import org.graphper.layout.dot.RankContent.RankNode;
 import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
+import org.graphper.util.ValueUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,7 +128,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
 
         // All out edges
         for (DLine line : digraphProxy.outAdjacent(node)) {
-          if (line.isVirtual() || line.isHide()) {
+          if (line.isVirtual()) {
             continue;
           }
 
@@ -148,6 +150,9 @@ class OrthogonalRouter extends AbstractDotLineRouter {
   }
 
   private void ovgRouter(EdgeSegRecord edgeSegRecord, DLine line) {
+    if (line.isHide()) {
+      return;
+    }
     LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(line.getLine());
     if (lineDrawProp == null || lineDrawProp.isInit()) {
       return;
@@ -236,6 +241,9 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     // Visit each group, each group is a connected subgraph
     for (Map<Integer, List<EdgeSeg>> group : groups) {
       int idx = 0;
+      // All nodes in the same rank use the same offset
+      double moveUnit = channel.range() / (group.size() + 1);
+
       // Access all nodes in the subgraph, and the nodes are sorted according to the rank
       for (Entry<Integer, List<EdgeSeg>> rank : group.entrySet()) {
         if (CollectionUtils.isEmpty(rank.getValue())) {
@@ -243,16 +251,17 @@ class OrthogonalRouter extends AbstractDotLineRouter {
           continue;
         }
 
-        // All nodes in the same rank use the same offset
-        double moveUnit = channel.range() / (group.size() + 1);
-        double offset = moveUnit * ++idx - rank.getValue().get(0).axis + channel.min;
+        idx++;
         for (EdgeSeg edgeSeg : rank.getValue()) {
           if (edgeSeg.canNotMove) {
             continue;
           }
+
+          double offset = moveUnit * idx - edgeSeg.axis + channel.min;
           edgeSeg.moveAxis(offset);
         }
       }
+
     }
   }
 
@@ -264,7 +273,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
 
       for (int j = i + 1; j < channel.segmentSize(); j++) {
         EdgeSeg overlapSeg = channel.get(j);
-        if (overlapSeg.isHor != edgeSeg.isHor || !edgeSeg.startInRange(overlapSeg)) {
+        if (overlapSeg.isHor != edgeSeg.isHor || !edgeSeg.overlap(overlapSeg)) {
           break;
         }
 
@@ -278,7 +287,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
   }
 
   private int overlapCmp(EdgeSeg source, EdgeSeg target) {
-    if (source.isHor != target.isHor || !source.startInRange(target)) {
+    if (source.isHor != target.isHor || !source.overlap(target)) {
       return 0;
     }
 
@@ -375,9 +384,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
      *
      * Must have an estimate ^h(n) of h(n).
      */
-    int itr = 0;
     while (pathContent.isNotEmpty()) {
-      itr++;
       VertexDir vertexDir = pathContent.poll();
       if (vertexDir == null) {
         continue;
@@ -413,14 +420,19 @@ class OrthogonalRouter extends AbstractDotLineRouter {
         continue;
       }
 
-      addStartVertexesToQueue(horDir, verDir, from, fromPoint.notNodeCenter(), target, vertex);
+      addStartVertexesToQueue(horDir, verDir, from, target, vertex);
     }
   }
 
+  private boolean notNodeCenter(Integer horDir, Integer verDir) {
+    return horDir != null || verDir != null;
+  }
+
   private void addStartVertexesToQueue(Integer horDir, Integer verDir, Cell from,
-                                       boolean havePort, Target target, GridVertex vertex) {
+                                       Target target, GridVertex vertex) {
     int dir = getCellInternalNodeDir(vertex);
-    if (havePort && isNotExpectDir(horDir, dir) && isNotExpectDir(verDir, dir)) {
+    if (notNodeCenter(horDir, verDir) && isNotExpectDir(horDir, dir)
+        && isNotExpectDir(verDir, dir)) {
       return;
     }
 
@@ -434,7 +446,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     Integer horDir = horDir(endPoint, target.end);
     Integer verDir = verDir(endPoint, target.end);
 
-    if (endPoint.notNodeCenter() && isNotContrary(horDir, vertexDir.dir)
+    if (notNodeCenter(horDir, verDir) && isNotContrary(horDir, vertexDir.dir)
         && isNotContrary(verDir, vertexDir.dir)) {
       return false;
     }
@@ -449,12 +461,30 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     // The edge segment connect node "to" center and node border point
     EdgeSeg edgeSeg = null;
     EdgeSeg lastSeg = null;
+    GridVertex breakOffVertex = null;
 
     do {
       // Refresh edge segment endpoint
       if (edgeSeg != null) {
         edgeSeg.addVertex(current);
       }
+
+      if (!current.vertex.isNodeInternal()) {
+        if (breakOffVertex == null) {
+          breakOffVertex = current.vertex;
+        } else {
+          if (current.isHor()) {
+            if (breakOffVertex.getWidth() < current.vertex.getWidth()) {
+              breakOffVertex = current.vertex;
+            }
+          } else {
+            if (breakOffVertex.getHeight() < current.vertex.getHeight()) {
+              breakOffVertex = current.vertex;
+            }
+          }
+        }
+      }
+
       // If vertex dir is orthogonal with current segment, generate a new segment
       if (edgeSeg != null && !current.isOrthogonal(edgeSeg.isHor)) {
         current = current.parent;
@@ -480,20 +510,59 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       edgeSeg.addVertex(current);
 
       // Add pre segment to edgeSegRecord
-      setEdgeRecord(edgeSegRecord, current, edgeSeg);
+      setEdgeRecord(edgeSegRecord, current.vertex, edgeSeg);
       current = current.parent;
     } while (current != null);
 
     adjustPortSeg(fromCenter, edgeSeg, from);
-    adjustPortSeg(toCenter, lastSeg, to);
+    if (edgeSeg == lastSeg && toCenter.getPort() != null && breakOffVertex != null) {
+      double breakAxis = edgeSeg.isHor ? breakOffVertex.getX() : breakOffVertex.getY();
+
+      // Add new tail EdgeSeg, and set endpoint to breakAxis
+      lastSeg = new EdgeSeg(edgeSeg.axis, edgeSeg.isHor, edgeSeg.pos);
+      if (breakAxis > edgeSeg.start) {
+        lastSeg.addPoint(breakAxis);
+        lastSeg.addPoint(edgeSeg.end);
+      } else {
+        lastSeg.addPoint(edgeSeg.start);
+        lastSeg.addPoint(breakAxis);
+      }
+      adjustPortSeg(toCenter, lastSeg, to);
+
+      // If last do not have too much move distance, ignore wrong position
+      if (ValueUtils.approximate(edgeSeg.axis, lastSeg.axis, 5)) {
+        return new EdgeDraw(edgeSeg);
+      }
+
+      // Set endpoint to breakAxis, make sure segments connected
+      if (breakAxis > edgeSeg.start) {
+        edgeSeg.moveEndpoint(edgeSeg.end, breakAxis);
+      } else {
+        edgeSeg.moveEndpoint(edgeSeg.start, breakAxis);
+      }
+
+      EdgeSeg second = new EdgeSeg(breakAxis, !edgeSeg.isHor, lastSeg.axis > edgeSeg.axis);
+      second.addPoint(edgeSeg.axis);
+      second.addPoint(lastSeg.axis);
+
+      second.pre = edgeSeg;
+      edgeSeg.next = second;
+      lastSeg.pre = second;
+      second.next = lastSeg;
+
+      setEdgeRecord(edgeSegRecord, breakOffVertex, second);
+      setEdgeRecord(edgeSegRecord, end.vertex, lastSeg);
+    } else {
+      adjustPortSeg(toCenter, lastSeg, to);
+    }
 
     return new EdgeDraw(edgeSeg);
   }
 
   private static void adjustPortSeg(PortPoint portPoint, EdgeSeg edgeSeg, Cell targetCell) {
     double move;
-    edgeSeg.canNotMove = portPoint.notNodeCenter();
-    if (!edgeSeg.canNotMove) {
+    edgeSeg.canNotMove = portPoint.getPort() != null;
+    if (!portPoint.notNodeCenter()) {
       return;
     }
     if (edgeSeg.isHor) {
@@ -520,7 +589,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     }
   }
 
-  private void setEdgeRecord(EdgeSegRecord edgeSegRecord, VertexDir current, EdgeSeg edgeSeg) {
+  private void setEdgeRecord(EdgeSegRecord edgeSegRecord, GridVertex vertex, EdgeSeg edgeSeg) {
     if (edgeSeg == null) {
       return;
     }
@@ -528,11 +597,11 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     double min;
     double max;
     if (edgeSeg.isHor) {
-      min = current.vertex.getLeftUp().getY();
-      max = current.vertex.getRightDown().getY();
+      min = vertex.getLeftUp().getY();
+      max = vertex.getRightDown().getY();
     } else {
-      min = current.vertex.getLeftUp().getX();
-      max = current.vertex.getRightDown().getX();
+      min = vertex.getLeftUp().getX();
+      max = vertex.getRightDown().getX();
     }
     edgeSegRecord.addSeg(min, max, edgeSeg);
   }
@@ -1220,11 +1289,11 @@ class OrthogonalRouter extends AbstractDotLineRouter {
       return end;
     }
 
-    private boolean startInRange(EdgeSeg edgeSeg) {
+    private boolean overlap(EdgeSeg edgeSeg) {
       if (Objects.isNull(edgeSeg)) {
         return false;
       }
-      return inRange(edgeSeg.getStart());
+      return inRange(edgeSeg.getStart()) || inRange(edgeSeg.getEnd());
     }
 
     private boolean inRange(double val) {
@@ -1289,7 +1358,7 @@ class OrthogonalRouter extends AbstractDotLineRouter {
     private Map<Double, Map<Double, Channel>> channels;
 
     private EdgeSegRecord() {
-      this.lineEdgeSegs = new HashMap<>();
+      this.lineEdgeSegs = new LinkedHashMap<>();
     }
 
     private void addSeg(double min, double max, EdgeSeg edgeSeg) {

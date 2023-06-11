@@ -29,6 +29,8 @@ import org.graphper.util.Asserts;
  */
 public enum Port implements PortPosition {
 
+  CENTER(0, "c", new RatioPortPosition(0, 0)),
+
   WEST(0, "w", new RatioPortPosition(-0.5, 0)),
 
   NORTH_WEST(1, "nw", new RatioPortPosition(-0.5, -0.5)),

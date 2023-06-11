@@ -21,6 +21,8 @@ import org.graphper.api.Graphviz;
 import org.graphper.api.Graphviz.GraphvizBuilder;
 import org.graphper.api.Line;
 import org.graphper.api.Node;
+import org.graphper.api.attributes.Color;
+import org.graphper.api.attributes.LineStyle;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Rank;
@@ -37,8 +39,6 @@ public class OrthoPortTest extends GraphvizVisual {
     Node c = Node.builder().label("c").build();
     Node d = Node.builder().label("d").build();
     Node e = Node.builder().label("e").build();
-    Node f = Node.builder().label("f").build();
-    Node g = Node.builder().label("g").build();
 
     Graphviz graphviz = Graphviz.digraph()
         .splines(Splines.ORTHO)
@@ -325,6 +325,52 @@ public class OrthoPortTest extends GraphvizVisual {
                 .headPort(Port.NORTH_WEST)
                 .build()
         )
+        .build();
+
+    visual(graphviz);
+  }
+
+  @Test
+  public void portTestCase6() {
+    Node e = Node.builder().shape(NodeShapeEnum.RECORD)
+        .label("{<f0>f0|<f1>f1111111111111|{<f2>f2|<f22>}}").build();
+    Node f = Node.builder().shape(NodeShapeEnum.RECORD)
+        .label("{<f3>f3|{ooooooooo|<f4>f4|ooooooooo}|f5}").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .splines(Splines.ORTHO)
+        .addLine(Line.builder(e, f)
+                     .tailCell("f1")
+                     .headCell("f3")
+                     .style(LineStyle.DASHED)
+                     .build())
+        .addLine(Line.builder(e, f)
+                     .tailCell("f1")
+                     .headCell("f3")
+                     .tailPort(Port.EAST)
+                     .headPort(Port.SOUTH)
+                     .color(Color.RED)
+                     .build())
+        .addLine(Line.builder(e, f)
+                     .tailCell("f2")
+                     .headCell("f4")
+                     .tailPort(Port.SOUTH_WEST)
+                     .headPort(Port.NORTH_EAST)
+                     .build())
+
+        .addLine(Line.builder(e, f).tailCell("f2").headCell("f4").build())
+        .addLine(Line.builder(e, f).tailCell("f2").headCell("f4").build())
+        .addLine(Line.builder(e, f).tailCell("f2").headCell("f4").build())
+
+        .addLine(Line.builder(e, f).tailCell("f2").headCell("f4")
+                     .tailPort(Port.CENTER).headPort(Port.CENTER)
+                     .build())
+        .addLine(Line.builder(e, f).tailCell("f2").headCell("f4")
+                     .tailPort(Port.CENTER).headPort(Port.CENTER)
+                     .build())
+        .addLine(Line.builder(e, f).tailCell("f2").headCell("f4")
+                     .tailPort(Port.CENTER).headPort(Port.CENTER)
+                     .build())
         .build();
 
     visual(graphviz);

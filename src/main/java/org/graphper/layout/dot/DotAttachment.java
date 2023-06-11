@@ -31,10 +31,11 @@ import org.graphper.def.BiConcatIterable;
 import org.graphper.def.FlatPoint;
 import org.graphper.draw.DrawGraph;
 import org.graphper.draw.LineDrawProp;
+import org.graphper.layout.LayoutAttach;
 import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
 
-class DotAttachment {
+class DotAttachment extends LayoutAttach {
 
   private final DotDigraph dotDigraph;
 
@@ -141,19 +142,6 @@ class DotAttachment {
 
   void markHaveSubgraph() {
     this.haveSubgraphs = true;
-  }
-
-  GraphContainer breakAncestryContinuesContainer(GraphContainer graphContainer) {
-    if (graphContainer == null) {
-      return null;
-    }
-
-    GraphContainer container = graphContainer;
-    while (container != null && !container.isSubgraph() && !container.isTransparent()) {
-      container = getGraphviz().father(graphContainer);
-    }
-
-    return container;
   }
 
   boolean haveClusters() {
@@ -295,7 +283,7 @@ class DotAttachment {
     return c1;
   }
 
-  class DotLineClip extends LineClip {
+  static class DotLineClip extends LineClip {
 
     DotLineClip(DrawGraph drawGraph, DotDigraph dotDigraph) {
       this.drawGraph = drawGraph;

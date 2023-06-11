@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.apache_gs.commons.lang3.StringUtils;
 import org.graphper.api.Assemble;
 import org.graphper.api.GraphAttrs;
@@ -31,6 +33,7 @@ import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
 import org.graphper.api.LineAttrs;
 import org.graphper.api.Node;
+import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.attributes.Splines;
 import org.graphper.def.EdgeDedigraph;
@@ -40,8 +43,12 @@ import org.graphper.draw.DrawGraph;
 import org.graphper.draw.GraphvizDrawProp;
 import org.graphper.draw.LineDrawProp;
 import org.graphper.draw.NodeDrawProp;
+import org.graphper.draw.Rectangle;
 import org.graphper.layout.AbstractLayoutEngine;
+import org.graphper.layout.Cell;
+import org.graphper.layout.Cell.RootCell;
 import org.graphper.layout.FlipShifterStrategy;
+import org.graphper.layout.LayoutAttach;
 import org.graphper.layout.ShifterStrategy;
 import org.graphper.layout.dot.DotLineRouter.DotLineRouterFactory;
 import org.graphper.layout.dot.LineHandler.LineRouterBuilder;
@@ -51,6 +58,7 @@ import org.graphper.layout.dot.RoundedRouter.RoundedRouterFactory;
 import org.graphper.layout.dot.SplineRouter.SplineRouterFactory;
 import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
+import org.graphper.util.ValueUtils;
 
 /**
  * Hierarchical or layered drawings of directed graphs. The layout algorithm aims edges in the same
@@ -108,7 +116,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   @Override
-  protected Object attachment(DrawGraph drawGraph) {
+  protected LayoutAttach attachment(DrawGraph drawGraph) {
     Map<Node, DNode> nodeRecord = new HashMap<>(drawGraph.getGraphviz().nodeNum());
     DotDigraph dotDigraph = new DotDigraph(drawGraph.getGraphviz().nodeNum(),
                                            drawGraph.getGraphviz(), nodeRecord);
@@ -117,7 +125,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   @Override
-  protected void consumerNode(Node node, Object attachment, DrawGraph drawGraph,
+  protected void consumerNode(Node node, LayoutAttach attachment, DrawGraph drawGraph,
                               GraphContainer parentContainer) {
     DotAttachment dotAttachment = (DotAttachment) attachment;
 
@@ -153,7 +161,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   @Override
-  protected void consumerLine(Line line, Object attachment, DrawGraph drawGraph) {
+  protected void consumerLine(Line line, LayoutAttach attachment, DrawGraph drawGraph) {
     DotAttachment dotAttachment = (DotAttachment) attachment;
     // must not be null
     DNode source = dotAttachment.get(line.tail());
@@ -182,7 +190,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   @Override
-  protected void afterLayoutShifter(Object attach) {
+  protected void afterLayoutShifter(LayoutAttach attach) {
     DotAttachment dotAttachment = (DotAttachment) attach;
     DrawGraph drawGraph = dotAttachment.getDrawGraph();
 
@@ -198,7 +206,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   @Override
-  protected void afterRenderShifter(Object attach) {
+  protected void afterRenderShifter(LayoutAttach attach) {
     DotAttachment dotAttachment = (DotAttachment) attach;
     DrawGraph drawGraph = dotAttachment.getDrawGraph();
     if (drawGraph.needFlip()) {
@@ -220,10 +228,10 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   @Override
-  protected void layout(DrawGraph drawGraph, Object attachment) {
+  protected void layout(DrawGraph drawGraph, LayoutAttach attach) {
     Asserts.nullArgument(drawGraph, "DrawGraph");
 
-    DotAttachment dotAttachment = (DotAttachment) attachment;
+    DotAttachment dotAttachment = (DotAttachment) attach;
     DotDigraph dotDigraph = dotAttachment.getDotDigraph();
     Graphviz graphviz = drawGraph.getGraphviz();
     GraphAttrs graphAttrs = graphviz.graphAttrs();
@@ -243,6 +251,8 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
       // Primitive graph RankContent
       rankContent = new RankContent(dotDigraph, graphAttrs.getRankSep(), true, null);
     }
+
+    autoGeneratePort(dotAttachment);
 
     // Best node sorting between ranks.
     MinCross minCross = new MinCross(rankContent, dotAttachment);
@@ -266,7 +276,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
 
   // --------------------------------------------- private method ---------------------------------------------
 
-  protected void handleLegalLine(DotDigraph dotDigraph) {
+  private void handleLegalLine(DotDigraph dotDigraph) {
     List<DLine> reverseLines = null;
     List<DLine> selfLoopLines = null;
     for (DNode node : dotDigraph) {
@@ -302,6 +312,101 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
         }
       }
     }
+  }
+
+  private void autoGeneratePort(DotAttachment attach) {
+    List<LineDrawProp> autoSetPortLines = attach.getAutoSetPortLines();
+    if (CollectionUtils.isEmpty(autoSetPortLines)) {
+      return;
+    }
+
+    Map<String, List<LineDrawProp>> tailPortGroup = null;
+    Map<String, List<LineDrawProp>> headPortGroup = null;
+
+    DrawGraph drawGraph = attach.getDrawGraph();
+    for (LineDrawProp lineDrawProp : autoSetPortLines) {
+      Line line = lineDrawProp.getLine();
+      LineAttrs lineAttrs = lineDrawProp.lineAttrs();
+
+      NodeDrawProp tail = drawGraph.getNodeDrawProp(line.tail());
+      NodeDrawProp head = drawGraph.getNodeDrawProp(line.head());
+      if (lineAttrs.getTailCell() != null) {
+        if (tailPortGroup == null) {
+          tailPortGroup = new LinkedHashMap<>();
+        }
+        List<LineDrawProp> lines = tailPortGroup.computeIfAbsent(
+            tail.hashCode() + lineAttrs.getTailCell(), n -> new ArrayList<>());
+        lines.add(lineDrawProp);
+      }
+
+      if (lineAttrs.getHeadCell() != null) {
+        if (headPortGroup == null) {
+          headPortGroup = new LinkedHashMap<>();
+        }
+        List<LineDrawProp> lines = headPortGroup.computeIfAbsent(
+            head.hashCode() + lineAttrs.getHeadCell(), n -> new ArrayList<>());
+        lines.add(lineDrawProp);
+      }
+    }
+
+    List<Port> alterPorts = new ArrayList<>();
+    if (tailPortGroup != null) {
+      for (Entry<String, List<LineDrawProp>> entry : tailPortGroup.entrySet()) {
+        List<LineDrawProp> lines = entry.getValue();
+
+        LineDrawProp firstLine = lines.get(0);
+        LineAttrs lineAttrs = firstLine.lineAttrs();
+        NodeDrawProp tail = drawGraph.getNodeDrawProp(firstLine.getLine().tail());
+        RootCell root = tail.getCell();
+        if (root != null) {
+          Cell cell = root.getCellById(lineAttrs.getTailCell());
+          if (cell == null) {
+            continue;
+          }
+
+          Rectangle cellBox = cell.getCellBox(tail);
+          if (ValueUtils.approximate(cellBox.getLeftBorder(), tail.getLeftBorder(), 0.01)) {
+            alterPorts.add(Port.WEST);
+          }
+          if (ValueUtils.approximate(cellBox.getRightBorder(), tail.getRightBorder(), 0.01)) {
+            alterPorts.add(Port.EAST);
+          }
+          if (ValueUtils.approximate(cellBox.getUpBorder(), tail.getUpBorder(), 0.01)) {
+            alterPorts.add(Port.NORTH);
+          }
+          if (ValueUtils.approximate(cellBox.getDownBorder(), tail.getDownBorder(), 0.01)) {
+            alterPorts.add(Port.SOUTH);
+          }
+
+          if (CollectionUtils.isEmpty(alterPorts)) {
+            continue;
+          }
+        }
+
+        for (LineDrawProp line : lines) {
+          lineAttrs = line.lineAttrs();
+          if (lineAttrs.getHeadPort() != null) {
+
+          } else {
+
+          }
+        }
+      }
+    }
+
+    /*Rectangle cellBox = cell.getCellBox(tail);
+    if (ValueUtils.approximate(cellBox.getLeftBorder(), tail.getLeftBorder(), 0.01)) {
+      System.out.println(Port.WEST);
+    }
+    if (ValueUtils.approximate(cellBox.getRightBorder(), tail.getRightBorder(), 0.01)) {
+      System.out.println(Port.EAST);
+    }
+    if (ValueUtils.approximate(cellBox.getUpBorder(), tail.getUpBorder(), 0.01)) {
+      System.out.println(Port.NORTH);
+    }
+    if (ValueUtils.approximate(cellBox.getDownBorder(), tail.getDownBorder(), 0.01)) {
+      System.out.println(Port.SOUTH);
+    }*/
   }
 
   private void splines(DrawGraph drawGraph, DotDigraph dotDigraph, RankContent rankContent,
