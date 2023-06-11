@@ -762,7 +762,7 @@ public abstract class AbstractLayoutEngine implements LayoutEngine {
           continue;
         } else if (Objects.equals("assemble", field.getName())
             || Objects.equals("table", field.getName())) {
-          log.warn("Can not copy " + field.getName() + "attribute!");
+          log.warn("Can not copy " + field.getName() + " attribute!");
           field.setAccessible(false);
           continue;
         }

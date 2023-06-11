@@ -96,9 +96,6 @@ class OrthogonalRouter extends AbstractDotLineRouter {
 
   @Override
   public void route() {
-    // TODO: 2023/1/2
-    //  1.Router access low density area
-    //  2.Arrow clip direction
     this.pathContent = new PathContent();
     this.maze = new DotMaze(rankContent, drawGraph);
     generateEdge();
@@ -516,47 +513,60 @@ class OrthogonalRouter extends AbstractDotLineRouter {
 
     adjustPortSeg(fromCenter, edgeSeg, from);
     if (edgeSeg == lastSeg && toCenter.getPort() != null && breakOffVertex != null) {
-      double breakAxis = edgeSeg.isHor ? breakOffVertex.getX() : breakOffVertex.getY();
-
-      // Add new tail EdgeSeg, and set endpoint to breakAxis
-      lastSeg = new EdgeSeg(edgeSeg.axis, edgeSeg.isHor, edgeSeg.pos);
-      if (breakAxis > edgeSeg.start) {
-        lastSeg.addPoint(breakAxis);
-        lastSeg.addPoint(edgeSeg.end);
-      } else {
-        lastSeg.addPoint(edgeSeg.start);
-        lastSeg.addPoint(breakAxis);
+      EdgeDraw edgeDraw = splitWhenTailHeadAxisDiff(edgeSegRecord, to, toCenter, end,
+                                                    edgeSeg, breakOffVertex);
+      if (edgeDraw != null) {
+        return edgeDraw;
       }
-      adjustPortSeg(toCenter, lastSeg, to);
-
-      // If last do not have too much move distance, ignore wrong position
-      if (ValueUtils.approximate(edgeSeg.axis, lastSeg.axis, 5)) {
-        return new EdgeDraw(edgeSeg);
-      }
-
-      // Set endpoint to breakAxis, make sure segments connected
-      if (breakAxis > edgeSeg.start) {
-        edgeSeg.moveEndpoint(edgeSeg.end, breakAxis);
-      } else {
-        edgeSeg.moveEndpoint(edgeSeg.start, breakAxis);
-      }
-
-      EdgeSeg second = new EdgeSeg(breakAxis, !edgeSeg.isHor, lastSeg.axis > edgeSeg.axis);
-      second.addPoint(edgeSeg.axis);
-      second.addPoint(lastSeg.axis);
-
-      second.pre = edgeSeg;
-      edgeSeg.next = second;
-      lastSeg.pre = second;
-      second.next = lastSeg;
-
-      setEdgeRecord(edgeSegRecord, breakOffVertex, second);
-      setEdgeRecord(edgeSegRecord, end.vertex, lastSeg);
     } else {
       adjustPortSeg(toCenter, lastSeg, to);
     }
 
     return new EdgeDraw(edgeSeg);
+  }
+
+  private EdgeDraw splitWhenTailHeadAxisDiff(EdgeSegRecord edgeSegRecord, Cell to,
+                                             PortPoint toCenter, VertexDir end,
+                                             EdgeSeg edgeSeg, GridVertex breakOffVertex) {
+    EdgeSeg lastSeg;
+    double breakAxis = edgeSeg.isHor ? breakOffVertex.getX() : breakOffVertex.getY();
+
+    // Add new tail EdgeSeg, and set endpoint to breakAxis
+    lastSeg = new EdgeSeg(edgeSeg.axis, edgeSeg.isHor, edgeSeg.pos);
+    if (breakAxis > edgeSeg.start) {
+      lastSeg.addPoint(breakAxis);
+      lastSeg.addPoint(edgeSeg.end);
+    } else {
+      lastSeg.addPoint(edgeSeg.start);
+      lastSeg.addPoint(breakAxis);
+    }
+    adjustPortSeg(toCenter, lastSeg, to);
+
+    // If last do not have too much move distance, ignore wrong position
+    if (ValueUtils.approximate(edgeSeg.axis, lastSeg.axis, 5)) {
+      adjustPortSeg(toCenter, edgeSeg, to);
+      return new EdgeDraw(edgeSeg);
+    }
+
+    // Set endpoint to breakAxis, make sure segments connected
+    if (breakAxis > edgeSeg.start) {
+      edgeSeg.moveEndpoint(edgeSeg.end, breakAxis);
+    } else {
+      edgeSeg.moveEndpoint(edgeSeg.start, breakAxis);
+    }
+
+    EdgeSeg second = new EdgeSeg(breakAxis, !edgeSeg.isHor, lastSeg.axis > edgeSeg.axis);
+    second.addPoint(edgeSeg.axis);
+    second.addPoint(lastSeg.axis);
+
+    second.pre = edgeSeg;
+    edgeSeg.next = second;
+    lastSeg.pre = second;
+    second.next = lastSeg;
+
+    setEdgeRecord(edgeSegRecord, breakOffVertex, second);
+    setEdgeRecord(edgeSegRecord, end.vertex, lastSeg);
+    return null;
   }
 
   private static void adjustPortSeg(PortPoint portPoint, EdgeSeg edgeSeg, Cell targetCell) {
