@@ -18,10 +18,10 @@ package org.graphper.layout.dot;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.graphper.def.EdgeDedigraph;
-import org.graphper.def.FlatPoint;
 import org.graphper.api.Cluster;
 import org.graphper.api.GraphContainer;
+import org.graphper.def.EdgeDedigraph;
+import org.graphper.def.FlatPoint;
 import org.graphper.draw.ContainerDrawProp;
 
 class CoordinateV2 extends AbstractCoordinate {
@@ -133,9 +133,11 @@ class CoordinateV2 extends AbstractCoordinate {
 
   private void crossRankAuxEdge(DNode node) {
     for (DLine dLine : proxyDigraph.outAdjacent(node)) {
+      dotAttachment.addGeneratePort(dLine);
       DNode other = dLine.other(node);
       node.switchNormalModel();
       other.switchNormalModel();
+
       if (dLine.from().getRank() == dLine.to().getRank()) {
         DNode from = dLine.from().getRankIndex() < dLine.to().getRankIndex()
             ? dLine.from() : dLine.to();

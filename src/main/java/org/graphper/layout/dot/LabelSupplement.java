@@ -85,6 +85,7 @@ class LabelSupplement {
       needInsertLabelRankIdxs.add(from.getRank());
     }
 
+    dotAttachment.releaseLabelLines();
     if (CollectionUtils.isEmpty(needInsertLabelRankIdxs)) {
       return;
     }
@@ -254,6 +255,7 @@ class LabelSupplement {
     }
 
     SameRankAdjacentRecord sameRankAdjacentRecord = dotAttachment.getSameRankAdjacentRecord();
+    dotAttachment.releaseSameRankAdj();
 
     /*
      * Unique edge DLine records between vertices of the same rank

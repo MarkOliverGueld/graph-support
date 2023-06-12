@@ -25,15 +25,22 @@ import org.graphper.api.Cluster;
 import org.graphper.api.GraphContainer;
 import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
+import org.graphper.api.LineAttrs;
 import org.graphper.api.Node;
 import org.graphper.api.Subgraph;
+import org.graphper.api.attributes.Port;
 import org.graphper.def.BiConcatIterable;
 import org.graphper.def.FlatPoint;
 import org.graphper.draw.DrawGraph;
 import org.graphper.draw.LineDrawProp;
+import org.graphper.draw.NodeDrawProp;
+import org.graphper.draw.Rectangle;
+import org.graphper.layout.Cell;
+import org.graphper.layout.Cell.RootCell;
 import org.graphper.layout.LayoutAttach;
 import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
+import org.graphper.util.ValueUtils;
 
 class DotAttachment extends LayoutAttach {
 
@@ -48,6 +55,8 @@ class DotAttachment extends LayoutAttach {
   private boolean haveSubgraphs;
 
   private List<DLine> labelLines;
+
+  private GeneratePort generatePort;
 
   private DotLineClip lineClip;
 
@@ -98,6 +107,10 @@ class DotAttachment extends LayoutAttach {
     return sameRankAdjacentRecord;
   }
 
+  public void releaseSameRankAdj() {
+    this.sameRankAdjacentRecord = null;
+  }
+
   public void setSameRankAdjacentRecord(
       SameRankAdjacentRecord sameRankAdjacentRecord) {
     this.sameRankAdjacentRecord = sameRankAdjacentRecord;
@@ -114,6 +127,10 @@ class DotAttachment extends LayoutAttach {
 
   List<DLine> getLabelLines() {
     return CollectionUtils.isEmpty(labelLines) ? Collections.emptyList() : labelLines;
+  }
+
+  void releaseLabelLines() {
+    this.labelLines = null;
   }
 
   void addNode(DNode node) {
@@ -152,6 +169,10 @@ class DotAttachment extends LayoutAttach {
     return haveSubgraphs;
   }
 
+  GeneratePort getGeneratePort() {
+    return generatePort;
+  }
+
   boolean notContain(GraphContainer father, GraphContainer container) {
     return notContain(drawGraph.getGraphviz(), father, container);
   }
@@ -173,6 +194,71 @@ class DotAttachment extends LayoutAttach {
     }
 
     return father == parent ? current : null;
+  }
+
+  void addGeneratePort(DLine line) {
+    if (line == null || line.isVirtual()) {
+      return;
+    }
+    Line edge = line.getLine();
+    Node tail = edge.tail();
+    Node head = edge.head();
+    LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(edge);
+    Asserts.nullArgument(lineDrawProp, "Can not found line prop when generate line port");
+    LineAttrs lineAttrs = lineDrawProp.lineAttrs();
+
+    GeneratePortLine generatePortLine = null;
+    Node node = getNode(line.from(), tail, head);
+    if (lineNodeNeedGeneratePort(node, tail, head, lineAttrs)) {
+      generatePortLine = new GeneratePortLine(lineDrawProp);
+      setCell(node, tail, head, lineAttrs, generatePortLine, true);
+    }
+
+    node = getNode(line.to(), tail, head);
+    if (lineNodeNeedGeneratePort(node, tail, head, lineAttrs)) {
+      if (generatePortLine == null) {
+        generatePortLine = new GeneratePortLine(lineDrawProp);
+      }
+
+      generatePortLine.to = line.to();
+      setCell(node, tail, head, lineAttrs, generatePortLine, false);
+    }
+
+    if (generatePortLine != null) {
+      generatePortLine.from = line.from();
+      generatePortLine.to = line.to();
+      generatePort().addLine(generatePortLine);
+    }
+  }
+
+  private void setCell(Node node, Node tail, Node head, LineAttrs lineAttrs,
+                       GeneratePortLine generatePortLine, boolean isFrom) {
+    Cell cell = null;
+    NodeDrawProp nodeDrawProp;
+    if (tail == node) {
+      nodeDrawProp = drawGraph.getNodeDrawProp(tail);
+      RootCell root = nodeDrawProp.getCell();
+      if (root != null) {
+        cell = root.getCellById(lineAttrs.getTailCell());
+      }
+    } else {
+      nodeDrawProp = drawGraph.getNodeDrawProp(head);
+      RootCell root = nodeDrawProp.getCell();
+      if (root != null) {
+        cell = root.getCellById(lineAttrs.getHeadCell());
+      }
+    }
+
+    if (cell == null) {
+      return;
+    }
+
+    generatePort().addCellOpenPorts(nodeDrawProp, cell);
+    if (isFrom) {
+      generatePortLine.fromCell = cell;
+    } else {
+      generatePortLine.toCell = cell;
+    }
   }
 
   static Iterable<Cluster> clusters(GraphContainer container) {
@@ -283,6 +369,57 @@ class DotAttachment extends LayoutAttach {
     return c1;
   }
 
+  // ----------------------------- private method -----------------------------
+  private GeneratePort generatePort() {
+    if (generatePort == null) {
+      generatePort = new GeneratePort();
+    }
+    return generatePort;
+  }
+
+  private void addGeneratePort(DNode dNode, DLine line, LineAttrs lineAttrs) {
+
+  }
+
+  private Node getNode(DNode node, Node tail, Node head) {
+    if (node.getNode() == tail) {
+      return tail;
+    }
+    if (node.getNode() == head) {
+      return head;
+    }
+    return null;
+  }
+
+  private boolean lineNodeNeedGeneratePort(Node node, Node tail, Node head, LineAttrs lineAttrs) {
+    if (node == null) {
+      return false;
+    }
+    return !lineHaveNodePort(node, tail, head, lineAttrs)
+        && lineHaveNodeCell(node, tail, head, lineAttrs);
+  }
+
+  private boolean lineHaveNodePort(Node node, Node tail, Node head, LineAttrs lineAttrs) {
+    if (node == tail) {
+      return lineAttrs.getTailPort() != null;
+    }
+    if (node == head) {
+      return lineAttrs.getHeadPort() != null;
+    }
+    return false;
+  }
+
+  private boolean lineHaveNodeCell(Node node, Node tail, Node head, LineAttrs lineAttrs) {
+    if (node == tail) {
+      return lineAttrs.getTailCell() != null;
+    }
+    if (node == head) {
+      return lineAttrs.getHeadCell() != null;
+    }
+    return false;
+  }
+
+  // ----------------------------- private method -----------------------------
   static class DotLineClip extends LineClip {
 
     DotLineClip(DrawGraph drawGraph, DotDigraph dotDigraph) {
@@ -319,4 +456,109 @@ class DotAttachment extends LayoutAttach {
       drawGraph.syncToGraphvizBorder();
     }
   }
+
+  static class GeneratePort {
+
+    private List<GeneratePortLine> lines;
+
+    private Map<Cell, List<Port>> cellOpenPort;
+
+    List<GeneratePortLine> getLines() {
+      if (lines == null) {
+        return Collections.emptyList();
+      }
+      return lines;
+    }
+
+    List<Port> getCellOpenBox(Cell cell) {
+      if (cellOpenPort == null) {
+        return null;
+      }
+      return cellOpenPort.getOrDefault(cell, Collections.emptyList());
+    }
+
+    private void addLine(GeneratePortLine line) {
+      if (lines == null) {
+        lines = new ArrayList<>();
+      }
+      lines.add(line);
+    }
+
+    private void addCellOpenPorts(NodeDrawProp node, Cell cell) {
+      if (cellOpenPort == null) {
+        cellOpenPort = new HashMap<>();
+      }
+      List<Port> ports = cellOpenPort.get(cell);
+      if (ports != null) {
+        return;
+      }
+
+      Rectangle cellBox = cell.getCellBox(node);
+      if (ValueUtils.approximate(cellBox.getLeftBorder(), node.getLeftBorder(), 0.01)) {
+        ports = new ArrayList<>(2);
+        ports.add(Port.WEST);
+      }
+      if (ValueUtils.approximate(cellBox.getRightBorder(), node.getRightBorder(), 0.01)) {
+        if (ports == null) {
+          ports = new ArrayList<>(2);
+        }
+        ports.add(Port.EAST);
+      }
+      if (ValueUtils.approximate(cellBox.getUpBorder(), node.getUpBorder(), 0.01)) {
+        if (ports == null) {
+          ports = new ArrayList<>(2);
+        }
+        ports.add(Port.NORTH);
+      }
+      if (ValueUtils.approximate(cellBox.getDownBorder(), node.getDownBorder(), 0.01)) {
+        if (ports == null) {
+          ports = new ArrayList<>(2);
+        }
+        ports.add(Port.SOUTH);
+      }
+
+      if (ports == null) {
+        return;
+      }
+      cellOpenPort.put(cell, ports);
+    }
+  }
+
+  static class GeneratePortLine {
+    private LineDrawProp line;
+    private DNode from;
+    private DNode to;
+    private Cell fromCell;
+    private Cell toCell;
+
+    public GeneratePortLine(LineDrawProp line) {
+      Asserts.nullArgument(line, "Line prop");
+      this.line = line;
+    }
+
+    public LineAttrs getLineAttrs() {
+      return line.lineAttrs();
+    }
+
+    public LineDrawProp getLine() {
+      return line;
+    }
+
+    public DNode getFrom() {
+      return from;
+    }
+
+    public DNode getTo() {
+      return to;
+    }
+
+    public Cell getFromCell() {
+      return fromCell;
+    }
+
+    public Cell getToCell() {
+      return toCell;
+    }
+  }
 }
+

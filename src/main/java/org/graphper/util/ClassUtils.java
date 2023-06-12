@@ -101,7 +101,7 @@ public class ClassUtils {
     Asserts.nullArgument(fieldName, "Null field name");
 
     Class<?> clazz = obj.getClass();
-    Field field = clazz.getField(fieldName);
+    Field field = clazz.getDeclaredField(fieldName);
     if (Modifier.isStatic(field.getModifiers())) {
       return;
     }

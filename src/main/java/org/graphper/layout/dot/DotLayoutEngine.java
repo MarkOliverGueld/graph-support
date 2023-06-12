@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 import org.apache_gs.commons.lang3.StringUtils;
 import org.graphper.api.Assemble;
 import org.graphper.api.GraphAttrs;
@@ -32,8 +31,10 @@ import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
 import org.graphper.api.LineAttrs;
 import org.graphper.api.Node;
+import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.attributes.Splines;
+import org.graphper.api.ext.Box;
 import org.graphper.def.EdgeDedigraph;
 import org.graphper.def.FlatPoint;
 import org.graphper.draw.ClusterDrawProp;
@@ -42,9 +43,12 @@ import org.graphper.draw.GraphvizDrawProp;
 import org.graphper.draw.LineDrawProp;
 import org.graphper.draw.NodeDrawProp;
 import org.graphper.layout.AbstractLayoutEngine;
+import org.graphper.layout.Cell;
 import org.graphper.layout.FlipShifterStrategy;
 import org.graphper.layout.LayoutAttach;
 import org.graphper.layout.ShifterStrategy;
+import org.graphper.layout.dot.DotAttachment.GeneratePort;
+import org.graphper.layout.dot.DotAttachment.GeneratePortLine;
 import org.graphper.layout.dot.DotLineRouter.DotLineRouterFactory;
 import org.graphper.layout.dot.LineHandler.LineRouterBuilder;
 import org.graphper.layout.dot.OrthogonalRouter.OrthogonalRouterFactory;
@@ -52,6 +56,7 @@ import org.graphper.layout.dot.PolyLineRouter.PolyLineRouterFactory;
 import org.graphper.layout.dot.RoundedRouter.RoundedRouterFactory;
 import org.graphper.layout.dot.SplineRouter.SplineRouterFactory;
 import org.graphper.util.Asserts;
+import org.graphper.util.ClassUtils;
 import org.graphper.util.CollectionUtils;
 
 /**
@@ -260,6 +265,9 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
       new CoordinateV2(graphAttrs.getNslimit(), rankContent, dotAttachment, digraphProxy);
     }
 
+    // If cell not set port, auto generate port for line to get more reasonable routing
+    autoGeneratePort(dotAttachment);
+
     if (!drawGraph.needFlip()) {
       containerLabelPos(drawGraph);
     }
@@ -306,6 +314,104 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
     }
   }
 
+  private void autoGeneratePort(DotAttachment attach) {
+    GeneratePort generatePort = attach.getGeneratePort();
+    if (generatePort == null) {
+      return;
+    }
+
+    Map<Cell, Box> cellBoxMap = new HashMap<>();
+    for (GeneratePortLine line : generatePort.getLines()) {
+      Cell fromCell = line.getFromCell();
+      Cell toCell = line.getToCell();
+      Box fromCellBox = null;
+      Box toCellBox = null;
+
+      if (fromCell != null) {
+        fromCellBox = cellBoxMap.computeIfAbsent(fromCell, c -> c.getCellBox(line.getFrom()));
+      }
+      if (toCell != null) {
+        toCellBox = cellBoxMap.computeIfAbsent(toCell, c -> c.getCellBox(line.getTo()));
+      }
+
+      if (fromCellBox != null) {
+        List<Port> ports = generatePort.getCellOpenBox(fromCell);
+        Port port = closestPort(ports, fromCellBox, line.getTo());
+
+        if (port != null) {
+          setLinePort(line.getLine(), line.getFrom(), port);
+        }
+      }
+      if (toCellBox != null) {
+        List<Port> ports = generatePort.getCellOpenBox(toCell);
+        Port port = closestPort(ports, toCellBox, line.getFrom());
+
+        if (port != null) {
+          setLinePort(line.getLine(), line.getTo(), port);
+        }
+      }
+    }
+  }
+
+  private void setLinePort(LineDrawProp line, DNode node, Port port) {
+    LineAttrs lineAttrs = line.lineAttrs();
+    try {
+      if (node.getNode() == line.getLine().tail()) {
+        if (lineAttrs.getTailPort() != null) {
+          return;
+        }
+        ClassUtils.modifyField(lineAttrs, "tailPort", port);
+      }
+      if (node.getNode() == line.getLine().head()) {
+        if (lineAttrs.getHeadPort() != null) {
+          return;
+        }
+        ClassUtils.modifyField(lineAttrs, "headPort", port);
+      }
+    } catch (IllegalAccessException | NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Port closestPort(List<Port> ports, Box source, Box target) {
+    if (CollectionUtils.isEmpty(ports)) {
+      return null;
+    }
+    Port closestPort = null;
+    for (Port port : ports) {
+      if (closestPort == null) {
+        closestPort = port;
+      } else {
+        closestPort = closerPort(closestPort, port, source, target);
+      }
+    }
+
+    return closestPort;
+  }
+
+  private Port closerPort(Port left, Port right, Box source, Box target) {
+    double lsx = source.getX() + left.horOffset(source);
+    double rsx = source.getX() + right.horOffset(source);
+
+    int r = Double.compare(xDist(lsx, target), xDist(rsx, target));
+    if (r != 0) {
+      return r < 0 ? left : right;
+    }
+
+    double lsy = source.getY() + left.verOffset(source);
+    double rsy = source.getY() + right.verOffset(source);
+    r = Double.compare(yDist(lsy, target), yDist(rsy, target));
+    return r < 0 ? left : right;
+  }
+
+  private double xDist(double x, Box target) {
+    return Math.abs(x - target.getX());
+  }
+
+  private double yDist(double y, Box target) {
+    return Math.abs(y - target.getY());
+  }
+
   private void splines(DrawGraph drawGraph, DotDigraph dotDigraph, RankContent rankContent,
                        EdgeDedigraph<DNode, DLine> digraphProxy) {
     Splines splines = drawGraph.getGraphviz().graphAttrs().getSplines();
@@ -347,34 +453,5 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
 
     double fontSize = lineAttrs.getFontSize() != null ? lineAttrs.getFontSize() : 0D;
     return labelContainer(label, lineAttrs.getFontName(), fontSize);
-  }
-
-  private static class LinePortGroup {
-
-    private TreeSet<LineDrawProp> sameRankLines;
-
-    private TreeSet<LineDrawProp> diffRankLines;
-
-    private void addLine(LineDrawProp line, DotDigraph digraph) {
-      DNode tail = digraph.getDNode(line.getLine().tail());
-      DNode head = digraph.getDNode(line.getLine().head());
-      if (tail.getRank() == head.getRank()) {
-        if (sameRankLines == null) {
-          sameRankLines = new TreeSet<>((l, r) -> compare(l, r, digraph));
-        }
-        sameRankLines.add(line);
-      } else {
-        if (diffRankLines == null) {
-          diffRankLines = new TreeSet<>((l, r) -> compare(l, r, digraph));
-        }
-        diffRankLines.add(line);
-      }
-    }
-
-    private int compare(LineDrawProp l, LineDrawProp r, DotDigraph digraph) {
-      DNode lh = digraph.getDNode(l.getLine().head());
-      DNode rh = digraph.getDNode(r.getLine().head());
-      return Integer.compare(lh.getRankIndex(), rh.getRankIndex());
-    }
   }
 }
