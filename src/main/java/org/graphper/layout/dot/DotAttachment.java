@@ -377,10 +377,6 @@ class DotAttachment extends LayoutAttach {
     return generatePort;
   }
 
-  private void addGeneratePort(DNode dNode, DLine line, LineAttrs lineAttrs) {
-
-  }
-
   private Node getNode(DNode node, Node tail, Node head) {
     if (node.getNode() == tail) {
       return tail;

@@ -378,13 +378,14 @@ public class OrthoPortTest extends GraphvizVisual {
 
   @Test
   public void portTestCase7() {
-    Node c = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f1>|<f2>}").build();
-    Node d = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f3>|<f4>}").build();
+    Node c = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f1>f1|<f2>f2}").build();
+    Node d = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f3>f3|<f4>f4}").build();
 
     Graphviz graphviz = Graphviz.digraph()
-        .splines(Splines.ORTHO)
-        .addLine(Line.builder(c, d).tailCell("f1").headCell("f3").label("foo").build())
-        .addLine(Line.builder(c, d).tailCell("f2").headCell("f4").label("bar").build())
+        .rankdir(Rankdir.LR)
+//        .splines(Splines.ORTHO)
+        .addLine(Line.builder(c, d).tailCell("f1").headCell("f3").label("f").build())
+        .addLine(Line.builder(c, d).tailCell("f2").headCell("f4").label("s").build())
         .build();
 
     visual(graphviz);

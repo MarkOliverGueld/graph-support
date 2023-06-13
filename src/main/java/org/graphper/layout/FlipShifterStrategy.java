@@ -101,6 +101,18 @@ public class FlipShifterStrategy extends AbstractShifterStrategy {
     return movePort(port, rankdir);
   }
 
+  public static Port backPort(Port port, Rankdir rankdir) {
+    if (port == null || rankdir == null) {
+      return port;
+    }
+    for (Port p : Port.values()) {
+      if (movePort(p, rankdir) == port) {
+        return p;
+      }
+    }
+    return port;
+  }
+
   public static Port movePort(Port port, Rankdir rankdir) {
     if (port == null || rankdir == null) {
       return port;
