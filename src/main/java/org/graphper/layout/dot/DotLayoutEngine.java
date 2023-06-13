@@ -133,7 +133,7 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
     if (dnIsNull) {
       if (drawGraph.needFlip()) {
         NodeDrawProp nodeDrawProp = drawGraph.getNodeDrawProp(node);
-        nodeDrawProp.flip();
+        nodeDrawProp.flip(drawGraph.rankdir());
       }
 
       dn = dotAttachment.mappingToDNode(node);

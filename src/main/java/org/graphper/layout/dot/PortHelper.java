@@ -143,7 +143,7 @@ public class PortHelper {
         return new PortPoint(shapePosition.getX(), shapePosition.getY(), false, null);
       }
 
-      FlatPoint center = cell.getCenter(rectangle);
+      FlatPoint center = cell.getCenter(shapePosition);
       // Rotation by current shapePosition
       FlipShifterStrategy.movePointOpposite(drawGraph.rankdir(), shapePosition, center);
       return new PortPoint(center.getX(), center.getY(), true, null);
@@ -153,7 +153,7 @@ public class PortHelper {
     NodeShape nodeShape = nodeDrawProp.nodeShape();
     if (cell != null) {
       // Cell center point need the original node box to calculated.
-      Rectangle cellRect = cell.getCellBox(rectangle);
+      Rectangle cellRect = cell.getCellBox(shapePosition);
       portPoint = new PortPoint(
           cellRect.getX() + port.horOffset(cellRect),
           cellRect.getY() + port.verOffset(cellRect), true, port
