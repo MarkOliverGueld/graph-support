@@ -150,11 +150,11 @@ public class NodeSizeExpander {
     groupKey.tailCell = getCell(nodeDrawProp, tailCell);
     groupKey.headCell = getCell(nodeDrawProp, headCell);
 
-    groupKey.tailPoint = PortHelper.endPoint(tailCell, tailPort, node.getNode(), drawGraph, node);
+    groupKey.tailPoint = PortHelper.getPortPoint(node, tailCell, tailPort, drawGraph);
     if (groupKey.samePoint()) {
       groupKey.headPoint = groupKey.tailPoint;
     } else {
-      groupKey.headPoint = PortHelper.endPoint(headCell, headPort, node.getNode(), drawGraph, node);
+      groupKey.headPoint = PortHelper.getPortPoint(node, headCell, headPort, drawGraph);
     }
     return groupKey;
   }

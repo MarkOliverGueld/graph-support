@@ -68,6 +68,11 @@ public class PortHelper {
     return getPortPoint(line, node, drawGraph, true);
   }
 
+  public static PortPoint getPortPoint(DNode node, String cellId, Port port, DrawGraph drawGraph) {
+    port = FlipShifterStrategy.movePort(drawGraph, port);
+    return endPoint(true, cellId, port, node.getNode(), drawGraph, node);
+  }
+
   public static PortPoint getPortPoint(Line line, DNode node, DrawGraph drawGraph,
                                        boolean portClipNode) {
     Asserts.nullArgument(node, "node");
@@ -99,11 +104,6 @@ public class PortHelper {
     return cellId;
   }
 
-  public static FlatPoint endPoint(String cellId, Port port, Node node,
-                                   DrawGraph drawGraph, ShapePosition shapePosition) {
-    return endPoint(true, cellId, port, node, drawGraph, shapePosition);
-  }
-
   public static PortPoint endPoint(boolean portClipNode, String cellId, Port port, Node node,
                                    DrawGraph drawGraph, ShapePosition shapePosition) {
     Asserts.nullArgument(node, "node");
@@ -122,8 +122,6 @@ public class PortHelper {
     if (rootCell != null) {
       cell = rootCell.getCellById(cellId);
     }
-
-//    Rectangle rectangle = getNodeBoxWithRankdir(drawGraph, shapePosition);
 
     if (port == null) {
       if (cell == null) {
@@ -169,7 +167,6 @@ public class PortHelper {
 
     FlatPoint p = AbstractDotLineRouter.straightLineClipShape(shapePosition, nodeShape,
                                                               center, portPoint);
-//    FlipShifterStrategy.movePointOpposite(drawGraph.rankdir(), shapePosition, p);
     return new PortPoint(p.getX(), p.getY(), true, port);
   }
 
