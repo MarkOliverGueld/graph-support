@@ -37,7 +37,6 @@ import org.graphper.def.Vectors;
 import org.graphper.draw.DefaultShapePosition;
 import org.graphper.draw.LineDrawProp;
 import org.graphper.draw.NodeDrawProp;
-import org.graphper.draw.Rectangle;
 import org.graphper.layout.Cell;
 import org.graphper.layout.Cell.RootCell;
 import org.graphper.layout.FlatShifterStrategy;
@@ -962,8 +961,8 @@ abstract class BoxGuideLineRouter extends AbstractDotLineRouter {
       Cell cell = nodeProp.getCell();
       String cellId = PortHelper.getCellId(lineProp.getLine(), node, lineProp);
       if (cell != null && (cell = ((RootCell) cell).getCellById(cellId)) != null) {
-        Rectangle rectangle = PortHelper.getNodeBoxWithRankdir(drawGraph, node);
-        cellBox = cell.getCellBox(rectangle);
+//        Rectangle rectangle = PortHelper.getNodeBoxWithRankdir(drawGraph, node);
+        cellBox = cell.getCellBox(nodeProp);
       }
     }
 

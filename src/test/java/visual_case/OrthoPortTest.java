@@ -385,11 +385,13 @@ public class OrthoPortTest extends GraphvizVisual {
         .rankdir(Rankdir.LR)
 //        .splines(Splines.ORTHO)
         .addLine(Line.builder(c, d)
-//                     .tailCell("f1").headCell("f3")
-                     .label("f").build())
-        .addLine(Line.builder(c, d)
+                     .tailCell("f1").headCell("f3")
+                     .tailPort(Port.SOUTH).headPort(Port.SOUTH)
+//                     .label("f")
+                     .build())
+//        .addLine(Line.builder(c, d)
 //                     .tailCell("f2").headCell("f4")
-                     .label("s").build())
+//                     .label("s").build())
         .build();
 
     visual(graphviz);
