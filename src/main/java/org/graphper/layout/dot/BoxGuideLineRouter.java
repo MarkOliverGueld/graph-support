@@ -961,7 +961,6 @@ abstract class BoxGuideLineRouter extends AbstractDotLineRouter {
       Cell cell = nodeProp.getCell();
       String cellId = PortHelper.getCellId(lineProp.getLine(), node, lineProp);
       if (cell != null && (cell = ((RootCell) cell).getCellById(cellId)) != null) {
-//        Rectangle rectangle = PortHelper.getNodeBoxWithRankdir(drawGraph, node);
         cellBox = cell.getCellBox(nodeProp);
       }
     }

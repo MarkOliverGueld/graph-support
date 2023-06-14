@@ -133,7 +133,11 @@ class CoordinateV2 extends AbstractCoordinate {
 
   private void crossRankAuxEdge(DNode node) {
     for (DLine dLine : proxyDigraph.outAdjacent(node)) {
-      dotAttachment.addGeneratePort(dLine);
+      for (int i = 0; i < dLine.getParallelNums(); i++) {
+        DLine l = dLine.parallelLine(i);
+        dotAttachment.addGeneratePort(l);
+      }
+
       DNode other = dLine.other(node);
       node.switchNormalModel();
       other.switchNormalModel();

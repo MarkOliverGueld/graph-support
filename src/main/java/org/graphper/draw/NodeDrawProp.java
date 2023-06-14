@@ -194,7 +194,8 @@ public class NodeDrawProp extends ContainerDrawProp implements Serializable {
     if (getCell() != null) {
       getCell().flip(rankdir, this);
     }
-
-    this.flip();
+    if (rankdir == Rankdir.LR || rankdir == Rankdir.RL) {
+      this.flip();
+    }
   }
 }

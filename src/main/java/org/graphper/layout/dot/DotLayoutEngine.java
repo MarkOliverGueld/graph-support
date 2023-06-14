@@ -131,10 +131,8 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
     DNode dn = dotAttachment.get(node);
     boolean dnIsNull = dn == null;
     if (dnIsNull) {
-      if (drawGraph.needFlip()) {
-        NodeDrawProp nodeDrawProp = drawGraph.getNodeDrawProp(node);
-        nodeDrawProp.flip(drawGraph.rankdir());
-      }
+      NodeDrawProp nodeDrawProp = drawGraph.getNodeDrawProp(node);
+      nodeDrawProp.flip(drawGraph.rankdir());
 
       dn = dotAttachment.mappingToDNode(node);
     }
@@ -391,17 +389,18 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
   }
 
   private Port closerPort(Port left, Port right, Box source, Box target) {
-    double lsx = source.getX() + left.horOffset(source);
-    double rsx = source.getX() + right.horOffset(source);
+    double lsy = source.getY() + left.verOffset(source);
+    double rsy = source.getY() + right.verOffset(source);
 
-    int r = Double.compare(xDist(lsx, target), xDist(rsx, target));
+    int r = Double.compare(yDist(lsy, target), yDist(rsy, target));
+
     if (r != 0) {
       return r < 0 ? left : right;
     }
 
-    double lsy = source.getY() + left.verOffset(source);
-    double rsy = source.getY() + right.verOffset(source);
-    r = Double.compare(yDist(lsy, target), yDist(rsy, target));
+    double lsx = source.getX() + left.horOffset(source);
+    double rsx = source.getX() + right.horOffset(source);
+    r = Double.compare(xDist(lsx, target), xDist(rsx, target));
     return r < 0 ? left : right;
   }
 

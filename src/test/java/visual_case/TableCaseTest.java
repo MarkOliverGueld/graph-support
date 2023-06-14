@@ -668,7 +668,8 @@ public class TableCaseTest extends GraphvizVisual {
         .addLine(Line.builder(struct1, struct3)
                      .tailCell("f2").headCell("f").headPort(Port.NORTH_WEST).build())
         .addLine(Line.builder(struct1, struct3)
-                     .tailCell("f2").headCell("here").headPort(Port.SOUTH).build());
+                     .tailCell("f2").headCell("here").headPort(Port.SOUTH).build())
+        ;
 
     visual(graphvizBuilder.build());
     visual(graphvizBuilder.rankdir(Rankdir.LR).build());

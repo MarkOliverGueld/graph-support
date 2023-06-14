@@ -382,16 +382,16 @@ public class OrthoPortTest extends GraphvizVisual {
     Node d = Node.builder().shape(NodeShapeEnum.RECORD).label("{<f3>f3|<f4>f4}").build();
 
     Graphviz graphviz = Graphviz.digraph()
-        .rankdir(Rankdir.LR)
-//        .splines(Splines.ORTHO)
+        .rankdir(Rankdir.BT)
+        .splines(Splines.ORTHO)
         .addLine(Line.builder(c, d)
                      .tailCell("f1").headCell("f3")
-                     .tailPort(Port.SOUTH).headPort(Port.SOUTH)
-//                     .label("f")
+                     .label("f")
                      .build())
-//        .addLine(Line.builder(c, d)
-//                     .tailCell("f2").headCell("f4")
-//                     .label("s").build())
+        .addLine(Line.builder(c, d)
+                     .tailCell("f2").headCell("f4")
+                     .label("s")
+                     .build())
         .build();
 
     visual(graphviz);

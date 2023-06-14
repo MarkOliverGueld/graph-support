@@ -18,6 +18,7 @@ package org.graphper.layout;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -440,6 +441,10 @@ public abstract class AbstractLayoutEngine implements LayoutEngine {
           if (id != null) {
             cell = new Cell(false);
             rootCell.put(id, cell);
+            if (rootCell.children == null) {
+              rootCell.children = new ArrayList<>(2);
+            }
+            rootCell.children.add(cell);
           }
         }
 

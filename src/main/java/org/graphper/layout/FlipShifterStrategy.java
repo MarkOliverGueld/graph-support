@@ -16,19 +16,17 @@
 
 package org.graphper.layout;
 
-import java.util.Objects;
+import org.graphper.api.attributes.Port;
+import org.graphper.api.attributes.Rankdir;
+import org.graphper.api.ext.Box;
 import org.graphper.def.FlatPoint;
-import org.graphper.def.Vectors;
+import org.graphper.draw.ContainerDrawProp;
+import org.graphper.draw.DrawGraph;
 import org.graphper.draw.NodeDrawProp;
+import org.graphper.draw.Rectangle;
 import org.graphper.layout.Cell.RootCell;
 import org.graphper.layout.dot.RouterBox;
 import org.graphper.util.Asserts;
-import org.graphper.api.ext.Box;
-import org.graphper.draw.ContainerDrawProp;
-import org.graphper.draw.DrawGraph;
-import org.graphper.draw.Rectangle;
-import org.graphper.api.attributes.Port;
-import org.graphper.api.attributes.Rankdir;
 import org.graphper.util.CollectionUtils;
 
 /**
@@ -304,11 +302,13 @@ public class FlipShifterStrategy extends AbstractShifterStrategy {
 
   private void moveCell(NodeDrawProp rootBox, Cell cell, Rankdir rankdir) {
     FlatPoint offset = cell.getOffset();
-    if (!Objects.equals(offset, Vectors.ZERO)) {
-      if (rankdir == Rankdir.BT) {
+    if (rankdir == Rankdir.BT) {
+      if (offset != null) {
         offset.setY(rootBox.getHeight() - cell.getHeight() - offset.getY());
-      } else {
-        double tmp;
+      }
+    } else {
+      double tmp;
+      if (offset != null) {
         if (rankdir == Rankdir.LR) {
           tmp = offset.getX();
           offset.setX(offset.getY());
@@ -319,11 +319,11 @@ public class FlipShifterStrategy extends AbstractShifterStrategy {
           offset.setX(rootBox.getHeight() - offset.getY() - cell.getHeight());
           offset.setY(rootBox.getWidth() - tmp - cell.getWidth());
         }
-
-        tmp = cell.getHeight();
-        cell.setHeight(cell.getWidth());
-        cell.setWidth(tmp);
       }
+
+      tmp = cell.getHeight();
+      cell.setHeight(cell.getWidth());
+      cell.setWidth(tmp);
     }
 
     if (CollectionUtils.isEmpty(cell.getChildren())) {
