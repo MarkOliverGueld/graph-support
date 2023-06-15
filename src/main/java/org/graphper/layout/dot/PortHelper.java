@@ -49,6 +49,11 @@ public class PortHelper {
   }
 
   public static Port getLineEndPointPort(Node node, Line line, DrawGraph drawGraph) {
+    return getLineEndPointPort(node, line, drawGraph, true);
+  }
+
+  public static Port getLineEndPointPort(Node node, Line line, DrawGraph drawGraph,
+                                         boolean needMove) {
     if (node == null || line == null || drawGraph == null) {
       return null;
     }
@@ -56,10 +61,18 @@ public class PortHelper {
     LineAttrs lineAttrs = drawGraph.lineAttrs(line);
     Asserts.illegalArgument(lineAttrs == null, "can not find lineAttrs");
     if (node == line.tail()) {
-      return FlipShifterStrategy.movePort(drawGraph, lineAttrs.getTailPort());
+      if (needMove) {
+        return FlipShifterStrategy.movePort(drawGraph, lineAttrs.getTailPort());
+      }
+
+      return lineAttrs.getTailPort();
     }
     if (node == line.head()) {
-      return FlipShifterStrategy.movePort(drawGraph, lineAttrs.getHeadPort());
+      if (needMove) {
+        return FlipShifterStrategy.movePort(drawGraph, lineAttrs.getHeadPort());
+      }
+
+      return lineAttrs.getHeadPort();
     }
     return null;
   }
@@ -70,8 +83,7 @@ public class PortHelper {
   }
 
   public static PortPoint getPortPoint(DNode node, String cellId, Port port, DrawGraph drawGraph) {
-//    port = FlipShifterStrategy.movePort(drawGraph, port);
-    return endPoint(true, false, cellId, port, node.getNode(), drawGraph, node);
+    return endPoint(true, cellId, port, node.getNode(), drawGraph, node);
   }
 
   public static PortPoint getPortPoint(Line line, DNode node, DrawGraph drawGraph,
@@ -90,7 +102,7 @@ public class PortHelper {
 
     String cellId = getCellId(line, node, lineDrawProp);
 
-    Port port = getLineEndPointPort(node.getNode(), line, drawGraph);
+    Port port = getLineEndPointPort(node.getNode(), line, drawGraph, false);
     return endPoint(portClipNode, cellId, port, node.getNode(), drawGraph, node);
   }
 
@@ -105,12 +117,7 @@ public class PortHelper {
     return cellId;
   }
 
-  public static PortPoint endPoint(boolean portClipNode, String cellId, Port port, Node node,
-                                   DrawGraph drawGraph, ShapePosition shapePosition) {
-    return endPoint(portClipNode, true, cellId, port, node, drawGraph, shapePosition);
-  }
-
-  public static PortPoint endPoint(boolean portClipNode, boolean portFlip, String cellId, Port port,
+  public static PortPoint endPoint(boolean portClipNode, String cellId, Port port,
                                    Node node, DrawGraph drawGraph, ShapePosition shapePosition) {
     Asserts.nullArgument(node, "node");
     Asserts.nullArgument(shapePosition, "shapePosition");
@@ -152,9 +159,7 @@ public class PortHelper {
       cellRect = getNodeBoxWithRankdir(shapePosition.getRightBorder(),
                                        shapePosition.getDownBorder(),
                                        drawGraph, cellShapePos);
-      if (portFlip) {
-        port = FlipShifterStrategy.backPort(port, rankdir);
-      }
+
       portPoint = new PortPoint(
           cellRect.getX() + port.horOffset(cellRect),
           cellRect.getY() + port.verOffset(cellRect), true, port
