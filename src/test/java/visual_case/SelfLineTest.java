@@ -22,11 +22,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-import org.graphper.api.attributes.Rankdir;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.graphper.def.BiConcatIterable;
 import org.graphper.api.Cluster;
 import org.graphper.api.FloatLabel;
 import org.graphper.api.Graphviz;
@@ -39,6 +34,11 @@ import org.graphper.api.attributes.LineStyle;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Rank;
+import org.graphper.api.attributes.Rankdir;
+import org.graphper.def.BiConcatIterable;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class SelfLineTest extends GraphvizVisual {
 
@@ -264,10 +264,16 @@ public class SelfLineTest extends GraphvizVisual {
     Node l = Node.builder().label("l").build();
     Node m = Node.builder().label("m").build();
     Node n = Node.builder().label("n").build();
+    Node o = Node.builder().shape(NodeShapeEnum.RECORD)
+        .label("{<1>1|<2>2}").build();
 
     GraphvizBuilder graphvizBuilder = Graphviz.digraph()
         .scale(0.7)
         .addLine(Line.builder(a, a).tailPort(Port.WEST).headPort(Port.NORTH_EAST).build())
+        .addLine(Line.builder(o, o)
+                     .tailCell("1").headCell("2")
+                     .tailPort(Port.WEST).headPort(Port.EAST)
+                     .build())
         .addLine(Line.builder(a, a).tailPort(Port.WEST).build())
         .addLine(
             Line.builder(a, a).tailPort(Port.WEST).headPort(Port.EAST)
@@ -383,10 +389,22 @@ public class SelfLineTest extends GraphvizVisual {
                 .rank(Rank.SAME)
                 .addNode(h, i, j, k, l, m, n)
                 .build()
-        );
+        )
+        ;
 
     visual(graphvizBuilder
+               .tempNode(Node.builder().shape(NodeShapeEnum.TRIANGLE).build())
+               .build());
+    visual(graphvizBuilder
                .rankdir(Rankdir.BT)
+               .tempNode(Node.builder().shape(NodeShapeEnum.TRIANGLE).build())
+               .build());
+    visual(graphvizBuilder
+               .rankdir(Rankdir.LR)
+               .tempNode(Node.builder().shape(NodeShapeEnum.TRIANGLE).build())
+               .build());
+    visual(graphvizBuilder
+               .rankdir(Rankdir.RL)
                .tempNode(Node.builder().shape(NodeShapeEnum.TRIANGLE).build())
                .build());
   }

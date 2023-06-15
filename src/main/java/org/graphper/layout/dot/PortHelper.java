@@ -23,6 +23,7 @@ import org.graphper.api.Node;
 import org.graphper.api.attributes.NodeShape;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
+import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.ext.ShapePosition;
 import org.graphper.def.FlatPoint;
 import org.graphper.draw.DefaultShapePosition;
@@ -69,8 +70,8 @@ public class PortHelper {
   }
 
   public static PortPoint getPortPoint(DNode node, String cellId, Port port, DrawGraph drawGraph) {
-    port = FlipShifterStrategy.movePort(drawGraph, port);
-    return endPoint(true, cellId, port, node.getNode(), drawGraph, node);
+//    port = FlipShifterStrategy.movePort(drawGraph, port);
+    return endPoint(true, false, cellId, port, node.getNode(), drawGraph, node);
   }
 
   public static PortPoint getPortPoint(Line line, DNode node, DrawGraph drawGraph,
@@ -106,6 +107,11 @@ public class PortHelper {
 
   public static PortPoint endPoint(boolean portClipNode, String cellId, Port port, Node node,
                                    DrawGraph drawGraph, ShapePosition shapePosition) {
+    return endPoint(portClipNode, true, cellId, port, node, drawGraph, shapePosition);
+  }
+
+  public static PortPoint endPoint(boolean portClipNode, boolean portFlip, String cellId, Port port,
+                                   Node node, DrawGraph drawGraph, ShapePosition shapePosition) {
     Asserts.nullArgument(node, "node");
     Asserts.nullArgument(shapePosition, "shapePosition");
 
@@ -133,44 +139,66 @@ public class PortHelper {
     }
 
     PortPoint portPoint;
+    Rankdir rankdir = drawGraph.rankdir();
     NodeShape nodeShape = nodeDrawProp.nodeShape();
+    Rectangle rectangle = getNodeBoxWithRankdir(drawGraph, shapePosition);
+
     if (cell != null) {
       // Cell center point need the original node box to calculated.
       Rectangle cellRect = cell.getCellBox(shapePosition);
+      DefaultShapePosition cellShapePos = new DefaultShapePosition(
+          cellRect.getX(), cellRect.getY(), cell.getHeight(), cell.getWidth(), cell.getShape()
+      );
+      cellRect = getNodeBoxWithRankdir(shapePosition.getRightBorder(),
+                                       shapePosition.getDownBorder(),
+                                       drawGraph, cellShapePos);
+      if (portFlip) {
+        port = FlipShifterStrategy.backPort(port, rankdir);
+      }
       portPoint = new PortPoint(
           cellRect.getX() + port.horOffset(cellRect),
           cellRect.getY() + port.verOffset(cellRect), true, port
       );
+      rectangle = cellRect;
       nodeShape = cell.getShape() != null ? cell.getShape() : NodeShapeEnum.RECT;
     } else {
       // Calculate the original port point coordinate
       portPoint = new PortPoint(
-          shapePosition.getX() + port.horOffset(shapePosition),
-          shapePosition.getY() + port.verOffset(shapePosition), true, port
+          rectangle.getX() + port.horOffset(rectangle),
+          rectangle.getY() + port.verOffset(rectangle), true, port
       );
     }
 
     // If is the center, direct return
-    if (Objects.equals(portPoint.getX(), shapePosition.getX())
-        && Objects.equals(portPoint.getY(), shapePosition.getY())) {
+    if (Objects.equals(portPoint.getX(), rectangle.getX())
+        && Objects.equals(portPoint.getY(), rectangle.getY())) {
       return portPoint;
     }
 
-    if (!portClipNode || nodeShape.in(shapePosition, portPoint)) {
+    if (!portClipNode || nodeShape.in(rectangle, portPoint)) {
+      FlipShifterStrategy.movePointOpposite(drawGraph.rankdir(), shapePosition, portPoint);
       return portPoint;
     }
 
-    double leftWidth = nodeShape.leftWidth(shapePosition.getWidth());
-    double topHeight = nodeShape.topHeight(shapePosition.getHeight());
-    FlatPoint center = new FlatPoint(shapePosition.getLeftBorder() + leftWidth,
-                                     shapePosition.getUpBorder() + topHeight);
+    double leftWidth = nodeShape.leftWidth(rectangle.getWidth());
+    double topHeight = nodeShape.topHeight(rectangle.getHeight());
+    FlatPoint center = new FlatPoint(rectangle.getLeftBorder() + leftWidth,
+                                     rectangle.getUpBorder() + topHeight);
 
-    FlatPoint p = AbstractDotLineRouter.straightLineClipShape(shapePosition, nodeShape,
+    FlatPoint p = AbstractDotLineRouter.straightLineClipShape(rectangle, nodeShape,
                                                               center, portPoint);
+    FlipShifterStrategy.movePointOpposite(drawGraph.rankdir(), shapePosition, p);
     return new PortPoint(p.getX(), p.getY(), true, port);
   }
 
   public static Rectangle getNodeBoxWithRankdir(DrawGraph drawGraph, ShapePosition shapePosition) {
+    return getNodeBoxWithRankdir(shapePosition.getRightBorder(),
+                                 shapePosition.getDownBorder(),
+                                 drawGraph, shapePosition);
+  }
+
+  public static Rectangle getNodeBoxWithRankdir(double maxX, double maxY, DrawGraph drawGraph,
+                                                ShapePosition shapePosition) {
     Rectangle rectangle = new Rectangle();
     rectangle.setUpBorder(shapePosition.getUpBorder());
     rectangle.setDownBorder(shapePosition.getDownBorder());
@@ -178,7 +206,7 @@ public class PortHelper {
     rectangle.setRightBorder(shapePosition.getRightBorder());
 
     // Rotation the rectangle to original position
-    FlipShifterStrategy.moveRectangle(drawGraph.rankdir(), rectangle);
+    FlipShifterStrategy.moveRectangle(drawGraph.rankdir(), maxX, maxY, rectangle);
     return rectangle;
   }
 
