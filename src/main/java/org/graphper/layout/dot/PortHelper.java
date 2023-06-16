@@ -23,7 +23,6 @@ import org.graphper.api.Node;
 import org.graphper.api.attributes.NodeShape;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
-import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.ext.ShapePosition;
 import org.graphper.def.FlatPoint;
 import org.graphper.draw.DefaultShapePosition;
@@ -146,7 +145,6 @@ public class PortHelper {
     }
 
     PortPoint portPoint;
-    Rankdir rankdir = drawGraph.rankdir();
     NodeShape nodeShape = nodeDrawProp.nodeShape();
     Rectangle rectangle = getNodeBoxWithRankdir(drawGraph, shapePosition);
 
@@ -256,6 +254,45 @@ public class PortHelper {
 
     FlatPoint point = new FlatPoint(shapePosition.getX(), shapePosition.getY());
     return AbstractDotLineRouter.straightLineClipShape(shapePosition, point, portPoint);
+  }
+
+  public static double portCompareNo(Line line, DNode node, DrawGraph drawGraph) {
+    Asserts.nullArgument(node, "node");
+    Asserts.nullArgument(drawGraph, "drawGraph");
+
+    if (node.isVirtual() || line == null) {
+      return 0;
+    }
+
+    LineDrawProp lineDrawProp = drawGraph.getLineDrawProp(line);
+    if (lineDrawProp == null) {
+      return 0;
+    }
+
+    NodeDrawProp nodeDrawProp = drawGraph.getNodeDrawProp(node.getNode());
+    Asserts.nullArgument(nodeDrawProp, "nodeDrawProp");
+
+    String cellId = getCellId(line, node, lineDrawProp);
+    Port port = getLineEndPointPort(node.getNode(), line, drawGraph, true);
+
+    Cell cell = null;
+    RootCell rootCell = nodeDrawProp.getCell();
+    if (rootCell != null) {
+      cell = rootCell.getCellById(cellId);
+    }
+
+    double compareNo = 0;
+    if (cell != null) {
+      FlatPoint offset = cell.getOffset();
+      if (offset != null) {
+        compareNo += offset.getX();
+      }
+    }
+
+    if (port != null) {
+      compareNo += port.horOffsetRatio();
+    }
+    return compareNo;
   }
 
   public static class PortPoint extends FlatPoint {

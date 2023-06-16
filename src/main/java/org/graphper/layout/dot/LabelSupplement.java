@@ -224,13 +224,11 @@ class LabelSupplement {
     }
 
     if (leftPreNode == rightPreNode && leftNextNode == rightNextNode) {
-      FlatPoint leftPrePoint = getPortPoint(leftLine, leftPreNode);
-      FlatPoint leftNextPoint = getPortPoint(leftLine, leftNextNode);
-      FlatPoint rightPrePoint = getPortPoint(rightLine, rightPreNode);
-      FlatPoint rightNextPoint = getPortPoint(rightLine, rightNextNode);
-      r = Double.compare(
-          leftPrePoint.getX() + leftNextPoint.getX(),
-          rightPrePoint.getX() + rightNextPoint.getX());
+      double leftPrePoint = getPortPoint(leftLine, leftPreNode);
+      double leftNextPoint = getPortPoint(leftLine, leftNextNode);
+      double rightPrePoint = getPortPoint(rightLine, rightPreNode);
+      double rightNextPoint = getPortPoint(rightLine, rightNextNode);
+      r = Double.compare(leftPrePoint + leftNextPoint, rightPrePoint + rightNextPoint);
       if (r != 0) {
         return r;
       }
@@ -582,7 +580,7 @@ class LabelSupplement {
     return median;
   }
 
-  private FlatPoint getPortPoint(DLine line, DNode node) {
-    return PortHelper.getPortPoint(line.getLine(), node, dotAttachment.getDrawGraph(), false);
+  private double getPortPoint(DLine line, DNode node) {
+    return PortHelper.portCompareNo(line.getLine(), node, dotAttachment.getDrawGraph());
   }
 }
