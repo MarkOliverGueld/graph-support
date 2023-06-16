@@ -435,4 +435,30 @@ public class BugCaseTest extends GraphvizVisual {
 
     visual(graphviz);
   }
+
+  @Test
+  public void testFlatPortLine() {
+    Node a = Node.builder().label("a").build();
+    Node b = Node.builder().label("b").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .startSub()
+        .rank(Rank.SAME)
+        .addLine(Line.builder(a, b).label("Line 1")
+                     .tailPort(Port.WEST).headPort(Port.EAST).build())
+        .addLine(Line.builder(a, b).label("Line 2")
+                     .tailPort(Port.WEST).headPort(Port.EAST).build())
+        .addLine(Line.builder(a, b).label("Line 3")
+                     .tailPort(Port.EAST).headPort(Port.WEST).build())
+        .addLine(Line.builder(a, b).label("Line 4")
+                     .tailPort(Port.EAST).headPort(Port.WEST).build())
+        .addLine(Line.builder(a, b).label("Line 5")
+                     .tailPort(Port.SOUTH_EAST).headPort(Port.SOUTH_WEST).build())
+        .addLine(Line.builder(a, b).label("Line 6")
+                     .tailPort(Port.SOUTH_EAST).headPort(Port.SOUTH_WEST).build())
+        .endSub()
+        .build();
+
+    visual(graphviz);
+  }
 }

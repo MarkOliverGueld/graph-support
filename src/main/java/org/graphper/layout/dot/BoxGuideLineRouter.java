@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import org.graphper.api.Line;
+import org.graphper.api.LineAttrs;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Splines;
@@ -393,7 +394,8 @@ abstract class BoxGuideLineRouter extends AbstractDotLineRouter {
     }
 
     for (FlatParallelLineParam parallelLineParam : flatParallelLineParams) {
-      if (itemsMinY < rank.getStartY() || itemsMaxY > rank.getEndY()) {
+      LineAttrs lineAttrs = parallelLineParam.line.lineAttrs();
+      if (!havePort(lineAttrs) && (itemsMinY < rank.getStartY() || itemsMaxY > rank.getEndY())) {
         double offset = rank.getStartY() - itemsMinY;
         FlatShifterStrategy shifter = new FlatShifterStrategy(0 , offset);
 
@@ -403,9 +405,15 @@ abstract class BoxGuideLineRouter extends AbstractDotLineRouter {
         shifter.movePoint(parallelLineParam.line.getLabelCenter());
       }
 
+      drawGraph.updateYAxisRange(itemsMinY);
+      drawGraph.updateYAxisRange(itemsMaxY);
       lineCompute(parallelLineParam.line.getLine(), parallelLineParam.line,
                   parallelLineParam.routerBoxes, parallelLineParam.from, parallelLineParam.to);
     }
+  }
+
+  private boolean havePort(LineAttrs lineAttrs) {
+    return lineAttrs.getTailPort() != null || lineAttrs.getHeadPort() != null;
   }
 
   private void lineLabelSet(DNode node) {
@@ -961,7 +969,7 @@ abstract class BoxGuideLineRouter extends AbstractDotLineRouter {
       Cell cell = nodeProp.getCell();
       String cellId = PortHelper.getCellId(lineProp.getLine(), node, lineProp);
       if (cell != null && (cell = ((RootCell) cell).getCellById(cellId)) != null) {
-        cellBox = cell.getCellBox(nodeProp);
+        cellBox = cell.getCellBox(node);
       }
     }
 
