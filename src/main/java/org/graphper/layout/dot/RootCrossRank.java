@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Predicate;
@@ -33,8 +34,11 @@ import org.graphper.draw.DrawGraph;
 import org.graphper.layout.dot.MinCross.ClusterOrder;
 import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
+import org.graphper.util.ValueUtils;
 
 class RootCrossRank implements CrossRank {
+
+  private static final int NO_INIT_PAIR_CACHE = -1;
 
   private static final int MIN_CROSS_SCALE = 256;
 
@@ -52,6 +56,8 @@ class RootCrossRank implements CrossRank {
 
   // Cross Number Cache
   private final Map<Integer, RankCrossCache> rankCrossCacheMap;
+
+  private Map<DNode, Map<DNode, PairCache>> pairCrossCache;
 
   private SameRankAdjacentRecord sameRankAdjacentRecord;
 
@@ -474,20 +480,15 @@ class RootCrossRank implements CrossRank {
     int[] rightCrossRecord = new int[3];
 
     int rv = 0;
-
     for (int i = 0; i < calcCrossRank().rankSize(rank) - 1; i++) {
       DNode v = calcCrossRank().getNode(rank, i);
       DNode w = calcCrossRank().getNode(rank, i + 1);
 
-      if (!canExchange(v, w)) {
-        continue;
-      }
-
       crossing(v, w, leftCrossRecord);
       crossing(w, v, rightCrossRecord);
 
-      if (leftCrossRecord[2] == rightCrossRecord[2] && i > 0
-          && !canExchange(calcCrossRank().getNode(rank, i - 1), v)) {
+      if (!canExchange(v, w) || (leftCrossRecord[2] == rightCrossRecord[2] && i > 0
+          && !canExchange(calcCrossRank().getNode(rank, i - 1), v))) {
         continue;
       }
 
@@ -496,14 +497,64 @@ class RootCrossRank implements CrossRank {
       ) {
         rv += (leftCrossRecord[2] - rightCrossRecord[2]);
         exchange(v, w);
-
-        setCacheExpired(rank);
+        rebuildCache(v, w);
       }
+    }
+
+    if (cacheWasExpired(rank)) {
+      int crossNum = 0;
+      for (int i = 0; i < calcCrossRank().rankSize(rank) - 1; i++) {
+        DNode v = calcCrossRank().getNode(rank, i);
+        DNode w = calcCrossRank().getNode(rank, i + 1);
+        int outCrossNum = getCrossCache(v, w, true);
+        Asserts.illegalArgument(outCrossNum < 0, "Can not found out pair cache");
+        crossNum += outCrossNum;
+      }
+
+      setRankCache(rank, crossNum);
     }
 
     return rv;
   }
 
+  private void rebuildCache(DNode n, DNode w) {
+    /*
+     * 1. Exchange current pair cross number;
+     * 2. Adjust pre/next rank pair nodes cache;
+     * 3. Adjust pre/current rank cross cache;
+     */
+    int rank = n.getRank();
+    PairCache pairCache = getOrCreatePairCache(n, w);
+    pairCache.exchange();
+
+    for (DLine l1 : digraphProxy.inAdjacent(n)) {
+      DNode o1 = l1.other(n);
+      for (DLine l2 : digraphProxy.inAdjacent(w)) {
+        DNode o2 = l2.other(w);
+        if (o1 == o2) {
+          return;
+        }
+
+        PairCache cache = getPairCache(o1, o2);
+        if (cache == null) {
+          continue;
+        }
+      }
+    }
+
+    for (DLine l1 : digraphProxy.outAdjacent(n)) {
+      for (DLine l2 : digraphProxy.outAdjacent(w)) {
+
+      }
+    }
+  }
+
+  private void setRankCache(int rank, int crossNum) {
+    RankCrossCache rankCrossCache = rankCrossCacheMap
+        .computeIfAbsent(rank, r -> new RankCrossCache());
+    rankCrossCache.effective = true;
+    rankCrossCache.crossNum = crossNum;
+  }
 
   private void setCacheExpired(int rank) {
     RankCrossCache rankCrossCache = rankCrossCacheMap.get(rank);
@@ -519,6 +570,19 @@ class RootCrossRank implements CrossRank {
     }
 
     rankCrossCache.effective = false;
+  }
+
+  private boolean cacheNotExpired(int rank) {
+    return !cacheWasExpired(rank);
+  }
+
+  private boolean cacheWasExpired(int rank) {
+    RankCrossCache rankCrossCache = rankCrossCacheMap.get(rank);
+    if (rankCrossCache == null) {
+      return true;
+    }
+
+    return !rankCrossCache.effective;
   }
 
   private boolean canExchange(DNode left, DNode right) {
@@ -561,8 +625,7 @@ class RootCrossRank implements CrossRank {
     return leftClusterOrder > rightClusterOrder;
   }
 
-  private void adjNodeAccess(boolean direction,
-                             DNode node,
+  private void adjNodeAccess(boolean direction, DNode node,
                              Predicate<DNode> nodeActionAndReturnNeedContinue) {
     Iterable<DLine> dLines = direction
         ? digraphProxy.inAdjacent(node)
@@ -652,10 +715,10 @@ class RootCrossRank implements CrossRank {
     }
 
     if (h != minRank()) {
-      result[0] = inCross(left, right);
+      result[0] = inCross(left, right, needExchange);
     }
     if (h != maxRank()) {
-      result[1] = outCross(left, right);
+      result[1] = outCross(left, right, needExchange);
     }
     result[2] = result[0] + result[1];
 
@@ -671,55 +734,205 @@ class RootCrossRank implements CrossRank {
   private int computeCrossNum(int rank) {
     int crossNum = 0;
     int rankSize = rankSize(rank);
+    AtomicInteger sameSourceNum = new AtomicInteger();
     for (int i = 0; i < rankSize; i++) {
       DNode current = getNode(rank, i);
       for (int j = i + 1; j < rankSize; j++) {
+        sameSourceNum.set(0);
         DNode next = getNode(rank, j);
-        // current node adjacent nodes
-        Iterable<DLine> curIter = digraphProxy.outAdjacent(current);
-        // next node adjacent nodes
-        Iterable<DLine> nextIter = digraphProxy.outAdjacent(next);
 
-        for (DLine curAdjLine : curIter) {
-          for (DLine nextAdjLine : nextIter) {
-            if (isCross(curAdjLine, nextAdjLine)) {
-              crossNum++;
-            }
-          }
+        int crossCache = getCrossCache(current, next, true);
+        if (crossCache != NO_INIT_PAIR_CACHE) {
+          crossNum += crossCache;
+          continue;
         }
+
+        crossNum = computeCrossNum(crossNum, current, next, sameSourceNum);
       }
     }
 
     return crossNum;
   }
 
-  private int inCross(DNode n, DNode w) {
+  private int computeCrossNum(int crossNum, DNode current, DNode next,
+                              AtomicInteger sameSourceNum) {
+    int crossCache;
+    // current node adjacent nodes
+    Iterable<DLine> curIter = digraphProxy.outAdjacent(current);
+    // next node adjacent nodes
+    Iterable<DLine> nextIter = digraphProxy.outAdjacent(next);
+
+    int downCombNum = 0;
+    crossCache = 0;
+    for (DLine curAdjLine : curIter) {
+      for (DLine nextAdjLine : nextIter) {
+        downCombNum++;
+        if (isCross(curAdjLine, nextAdjLine, sameSourceNum)) {
+          crossCache++;
+        }
+      }
+    }
+    crossNum += crossCache;
+
+    addPairCache(current, next, crossCache, downCombNum, sameSourceNum.get(), true);
+    return crossNum;
+  }
+
+  private void addPairCache(DNode current, DNode next, int crossCache,
+                            int downCombNum, int sameSourceNum, boolean out) {
+    if (pairCrossCache == null) {
+      pairCrossCache = new HashMap<>();
+    }
+
+    PairCache pairCache = getPairCache(current, next);
+    if (pairCache == null) {
+      pairCache = new PairCache();
+      Map<DNode, PairCache> pairCacheMap = new HashMap<>();
+      pairCacheMap.put(next, pairCache);
+      pairCrossCache.put(current, pairCacheMap);
+    }
+
+    if (out) {
+      if (pairCache.downCrossCache == null) {
+        pairCache.downCrossCache = new PairCross();
+      }
+      pairCache.downCrossCache.combNum = downCombNum;
+      pairCache.downCrossCache.crossNum = crossCache;
+      pairCache.downCrossCache.sameSourceNum = sameSourceNum;
+      return;
+    }
+
+    if (pairCache.upCrossCache == null) {
+      pairCache.upCrossCache = new PairCross();
+    }
+    pairCache.upCrossCache = new PairCross();
+    pairCache.upCrossCache.combNum = downCombNum;
+    pairCache.upCrossCache.crossNum = crossCache;
+    pairCache.upCrossCache.sameSourceNum = sameSourceNum;
+  }
+
+  private int getCrossCache(DNode n1, DNode n2) {
+    PairCache pairCache = getPairCache(n1, n2);
+    if (pairCache == null) {
+      return 0;
+    }
+    return pairCache.crossNum();
+  }
+
+  private int getCrossCache(DNode n1, DNode n2, boolean out) {
+    PairCache pairCache = getPairCache(n1, n2);
+    if (pairCache == null) {
+      return NO_INIT_PAIR_CACHE;
+    }
+
+    if (out) {
+      return pairCache.downCrossCache == null
+          ? NO_INIT_PAIR_CACHE : pairCache.downCrossCache.crossNum;
+    }
+
+    return pairCache.upCrossCache == null
+        ? NO_INIT_PAIR_CACHE : pairCache.upCrossCache.crossNum;
+  }
+
+  private PairCache getPairCache(DNode n1, DNode n2) {
+    if (pairCrossCache == null) {
+      return null;
+    }
+
+    Map<DNode, PairCache> adjCache = pairCrossCache.get(n1);
+    if (adjCache == null) {
+      adjCache = pairCrossCache.get(n2);
+      if (adjCache == null) {
+        return null;
+      }
+      return adjCache.get(n1);
+    }
+
+    return adjCache.get(n2);
+  }
+
+  private PairCache getOrCreatePairCache(DNode n1, DNode n2) {
+    if (pairCrossCache == null) {
+      pairCrossCache = new HashMap<>();
+    }
+    PairCache pairCache = getPairCache(n1, n2);
+    if (pairCache == null) {
+      pairCache = new PairCache();
+      Map<DNode, PairCache> pairCacheMap = new HashMap<>();
+      pairCacheMap.put(n2, pairCache);
+      pairCrossCache.put(n1, pairCacheMap);
+    }
+
+    return pairCache;
+  }
+
+  private int inCross(DNode n, DNode w, boolean exchanged) {
+    PairCache pairCache = getOrCreatePairCache(n, w);
+    if (cacheWasExpired(n.getRank())) {
+      pairCache.upCrossCache = null;
+    }
+
+    if (pairCache.upCrossCache == null) {
+      pairCache.upCrossCache = new PairCross();
+    } else {
+      if (exchanged) {
+        return pairCache.upCrossCache.reversalCrossNum();
+      }
+      return pairCache.upCrossCache.crossNum;
+    }
+
     int count = 0;
+    int upCombNum = 0;
+    AtomicInteger sameSourceNum = new AtomicInteger();
     for (DLine l1 : digraphProxy.inAdjacent(n)) {
       for (DLine l2 : digraphProxy.inAdjacent(w)) {
-        if (isCross(l1, l2)) {
+        upCombNum++;
+        if (isCross(l1, l2, sameSourceNum)) {
           count++;
         }
       }
     }
 
+    pairCache.upCrossCache.combNum = upCombNum;
+    pairCache.upCrossCache.crossNum = count;
+    pairCache.upCrossCache.sameSourceNum = sameSourceNum.get();
     return count;
   }
 
-  private int outCross(DNode n, DNode w) {
+  private int outCross(DNode n, DNode w, boolean exchanged) {
+    PairCache pairCache = getOrCreatePairCache(n, w);
+    if (cacheWasExpired(n.getRank())) {
+      pairCache.downCrossCache = null;
+    }
+
+    if (pairCache.downCrossCache == null) {
+      pairCache.downCrossCache = new PairCross();
+    } else {
+      if (exchanged) {
+        return pairCache.downCrossCache.reversalCrossNum();
+      }
+      return pairCache.downCrossCache.crossNum;
+    }
+
     int count = 0;
+    int downCombNum = 0;
+    AtomicInteger sameSourceNum = new AtomicInteger();
     for (DLine l1 : digraphProxy.outAdjacent(n)) {
       for (DLine l2 : digraphProxy.outAdjacent(w)) {
-        if (isCross(l1, l2)) {
+        downCombNum++;
+        if (isCross(l1, l2, sameSourceNum)) {
           count++;
         }
       }
     }
 
+    pairCache.downCrossCache.combNum = downCombNum;
+    pairCache.downCrossCache.crossNum = count;
+    pairCache.downCrossCache.sameSourceNum = sameSourceNum.get();
     return count;
   }
 
-  private boolean isCross(DLine line1, DLine line2) {
+  private boolean isCross(DLine line1, DLine line2, AtomicInteger sourceNum) {
     DNode u = line1.from();
     DNode x = line1.to();
     DNode v = line2.from();
@@ -727,12 +940,19 @@ class RootCrossRank implements CrossRank {
 
     if (u == v || u == y || x == v || x == y) {
       if ((u == v) == (x == y)) {
+        if (sourceNum != null) {
+          sourceNum.getAndIncrement();
+        }
         return false;
       }
 
       if (u == v) {
         double up = getCompareNo(line1, u);
         double vp = getCompareNo(line2, v);
+
+        if (sourceNum != null && isSameSource(up, vp)) {
+          sourceNum.getAndIncrement();
+        }
 
         if (x.getRank() == u.getRank()) {
           return comparePointX(up, vp) < 0 == getRankIndex(x) < getRankIndex(y);
@@ -743,6 +963,10 @@ class RootCrossRank implements CrossRank {
 
       double xp = getCompareNo(line1, x);
       double yp = getCompareNo(line2, y);
+
+      if (sourceNum != null && isSameSource(xp, yp)) {
+        sourceNum.getAndIncrement();
+      }
 
       if (u.getRank() == x.getRank()) {
         return comparePointX(xp, yp) < 0 == getRankIndex(u) < getRankIndex(v);
@@ -758,6 +982,10 @@ class RootCrossRank implements CrossRank {
     }
 
     return locationTag(u, v) * locationTag(y, x) + locationTag(v, u) * locationTag(x, y) == 1;
+  }
+
+  private boolean isSameSource(double v, double w) {
+    return ValueUtils.approximate(v, w, 0.1);
   }
 
   private int locationTag(DNode v, DNode w) {
@@ -828,6 +1056,50 @@ class RootCrossRank implements CrossRank {
         crossCache.effective = effective;
         return crossCache;
       }
+    }
+  }
+
+  private static class PairCache {
+
+    private PairCross upCrossCache;
+
+    private PairCross downCrossCache;
+
+    private void exchange() {
+      if (upCrossCache != null) {
+        upCrossCache.exchange();
+      }
+      if (downCrossCache != null) {
+        downCrossCache.exchange();
+      }
+    }
+
+    private int crossNum() {
+      int crossNum = 0;
+      if (upCrossCache != null) {
+        crossNum += upCrossCache.crossNum;
+      }
+      if (downCrossCache != null) {
+        crossNum += downCrossCache.crossNum;
+      }
+      return crossNum;
+    }
+  }
+
+  private static class PairCross {
+
+    private int combNum;
+
+    private int crossNum;
+
+    private int sameSourceNum;
+
+    private void exchange() {
+      crossNum = combNum - crossNum - sameSourceNum;
+    }
+
+    private int reversalCrossNum() {
+      return combNum - crossNum - sameSourceNum;
     }
   }
 }
