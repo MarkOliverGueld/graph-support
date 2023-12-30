@@ -34,6 +34,7 @@ import org.graphper.api.attributes.ArrowShape;
 import org.graphper.api.attributes.Color;
 import org.graphper.api.attributes.Dir;
 import org.graphper.api.attributes.Labeljust;
+import org.graphper.api.attributes.Labelloc;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.Port;
 import org.graphper.api.attributes.Rank;
@@ -547,6 +548,39 @@ public class BugCaseTest extends GraphvizVisual {
         .tempNode(Node.builder().shape(NodeShapeEnum.RECORD).build())
         .addNode(Node.builder().label("{hello|{|sssskkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk}|{fffffffffffffffff|}|{||||}|{|{|||}||}|{|}}").build())
         .addNode(Node.builder().label("{hello|{|{||{||{|}}}}|{|sssskkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk}|{fffffffffffffffff|}|{||||}||}").build())
+        .build();
+
+    visual(graphviz);
+  }
+
+  @Test
+  public void wrongLabelloc() {
+    Node A = Node.builder().label("A").build();
+    Node B = Node.builder().label("B").build();
+    Node C = Node.builder().label("C").build();
+    Node AA = Node.builder().label("AA").build();
+    Node BB = Node.builder().label("BB").build();
+    Node CC = Node.builder().label("CC").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .rankdir(Rankdir.BT)
+        .addLine(BB, C)
+        .cluster(
+            Cluster.builder()
+                .label("Cluster A")
+                .labelloc(Labelloc.BOTTOM)
+                .addLine(C, A)
+                .addLine(C, B)
+                .build()
+        )
+        .cluster(
+            Cluster.builder()
+                .label("Cluster B")
+                .labelloc(Labelloc.BOTTOM)
+                .addLine(CC, AA)
+                .addLine(CC, BB)
+                .build()
+        )
         .build();
 
     visual(graphviz);
