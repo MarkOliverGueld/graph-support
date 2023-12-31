@@ -554,6 +554,22 @@ public class BugCaseTest extends GraphvizVisual {
   }
 
   @Test
+  public void newLineMeasureTextWrong() {
+    Node n = Node.builder()
+        .shape(NodeShapeEnum.RECT)
+        .label("HELLO WORLD\n"
+                   + "HELLO WORLD HELLO WORLD HELLO WORLD HELLO WORLD\n"
+                   + "HELLO WORLD HELLO WORLD HELLO WORLD HELLO WORLD\n"
+                   + "HELLO WORLD HELLO WORLD HELLO WORLD HELLO WORLD\n"
+                   + "HELLO WORLD HELLO WORLD HELLO WORLD HELLO WORLD\n"
+                   + "HELLO WORLD HELLO WORLD HELLO WORLD HELLO WORLD\n"
+        )
+        .build();
+
+    visual(Graphviz.digraph().addNode(n).build());
+  }
+
+  @Test
   public void wrongLabelloc() {
     Node A = Node.builder().label("A").build();
     Node B = Node.builder().label("B").build();
@@ -581,6 +597,71 @@ public class BugCaseTest extends GraphvizVisual {
                 .addLine(CC, BB)
                 .build()
         )
+        .build();
+
+    visual(graphviz);
+  }
+
+  @Test
+  public void clusterOverlap() {
+    Node a = Node.builder().label("a").build();
+    Node b = Node.builder().label("b").build();
+    Node c = Node.builder().label("c").build();
+    Node d = Node.builder().label("d").build();
+    Node f = Node.builder().label("f").build();
+    Node l = Node.builder().label("l").build();
+    Node aa = Node.builder().label("aa").build();
+    Node bb = Node.builder().label("bb").build();
+    Node cc = Node.builder().label("cc").build();
+    Node ss = Node.builder().label("ss").build();
+    Node tt = Node.builder().label("tt").build();
+    Node gg = Node.builder().label("gg").build();
+    Node pp = Node.builder().label("pp").build();
+    Node ff = Node.builder().label("ff").build();
+    Node _12 = Node.builder().label("12").build();
+    Node _45 = Node.builder().label("45").build();
+    Node _34 = Node.builder().label("34").build();
+    Node _98 = Node.builder().label("98").build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .addLine(c, bb)
+        .addLine(b, f)
+        .addLine(f, gg)
+        .addLine(f, ss)
+        .addLine(b, d)
+        .addLine(c, d)
+        .addLine(aa, d)
+        .addLine(l, aa)
+
+        .startClus()
+        .label("Cluster A")
+        .addLine(a, c)
+        .addLine(b, c)
+        .endClus()
+
+        .startClus()
+        .label("Cluster B")
+        .addLine(aa, cc)
+        .addLine(bb, cc)
+        .endClus()
+
+        .startClus()
+        .label("Cluster C")
+        .addLine(ss, tt)
+        .addLine(gg, pp)
+        .addLine(d, f)
+        .addLine(l, ff)
+        .addLine(ff, ss)
+        .endClus()
+
+        .startClus()
+        .label("Cluster D")
+        .addLine(_12, _45)
+        .addLine(_34, _98)
+        .addLine(_34, _45)
+        .addLine(_45, _98)
+        .endClus()
+
         .build();
 
     visual(graphviz);
