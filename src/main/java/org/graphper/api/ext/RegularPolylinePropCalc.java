@@ -22,15 +22,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import org.graphper.api.NodeAttrs;
 import org.graphper.api.attributes.NodeShape;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.graphper.def.FlatPoint;
 import org.graphper.def.UnfeasibleException;
 import org.graphper.def.Vectors;
 import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
-import org.graphper.api.NodeAttrs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
 
@@ -78,22 +78,6 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
     return true;
   }
 
-  @Override
-  public NodeShape post(NodeAttrs nodeAttrs) {
-    Asserts.nullArgument(nodeAttrs, "nodeAttrs");
-    NodeShape nodeShape = nodeAttrs.getNodeShape();
-    Integer nodeSide = nodeAttrs.getSides();
-    if (nodeSide == null) {
-      return nodeShape;
-    }
-
-    RegularPolylinePropCalc propCalc = new RegularPolylinePropCalc(nodeSide);
-    return (NodeShape) Proxy.newProxyInstance(
-        NodeShape.class.getClassLoader(),
-        new Class[]{NodeShape.class},
-        new RegularProxyInvoker(nodeShape, propCalc));
-  }
-
   public void initPoints(Box box) {
     Asserts.nullArgument(box, "box");
     if (flatPoints == null) {
@@ -126,6 +110,27 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
 
   public List<FlatPoint> getPoints() {
     return flatPoints;
+  }
+
+  // -------------------------- Shape proxy handler --------------------------
+
+  public static class RegularPolyNodePost implements NodeShapePost {
+
+    @Override
+    public NodeShape post(NodeAttrs nodeAttrs) {
+      Asserts.nullArgument(nodeAttrs, "nodeAttrs");
+      NodeShape nodeShape = nodeAttrs.getNodeShape();
+      Integer nodeSide = nodeAttrs.getSides();
+      if (nodeSide == null) {
+        return nodeShape;
+      }
+
+      RegularPolylinePropCalc propCalc = new RegularPolylinePropCalc(nodeSide);
+      return (NodeShape) Proxy.newProxyInstance(
+          NodeShape.class.getClassLoader(),
+          new Class[]{NodeShape.class},
+          new RegularProxyInvoker(nodeShape, propCalc));
+    }
   }
 
   // -------------------------- Shape proxy handler --------------------------

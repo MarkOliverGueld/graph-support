@@ -26,7 +26,7 @@ import org.graphper.util.Asserts;
  *
  * @author Jamison Jiang
  */
-public interface ShapePropCalc extends NodeShapePost {
+public interface ShapePropCalc {
 
   /**
    * According to an inscribed rectangle, return the smallest container size that can ensure that

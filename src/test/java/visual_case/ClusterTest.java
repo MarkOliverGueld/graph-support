@@ -21,6 +21,7 @@ import org.graphper.api.Cluster;
 import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
 import org.graphper.api.Node;
+import org.graphper.api.attributes.ClusterShapeEnum;
 import org.graphper.api.attributes.Dir;
 import org.graphper.api.attributes.Labeljust;
 import org.graphper.api.attributes.Labelloc;
@@ -323,6 +324,28 @@ public class ClusterTest extends GraphvizVisual {
         .endClus()
         .endClus()
 
+        .build();
+
+    visual(graphviz);
+  }
+
+  @Test
+  public void testClusterShape_1() {
+    Node a = Node.builder().build();
+    Node b = Node.builder().build();
+    Node c = Node.builder().build();
+    Node d = Node.builder().build();
+
+    Graphviz graphviz = Graphviz.digraph()
+        .addNode(a)
+        .startClus()
+        .shape(ClusterShapeEnum.PARALLELOGRAM)
+        .addNode(d)
+        .startClus()
+        .shape(ClusterShapeEnum.TRIANGLE)
+        .addNode(b, c)
+        .endClus()
+        .endClus()
         .build();
 
     visual(graphviz);

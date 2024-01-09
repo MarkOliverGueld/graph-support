@@ -18,6 +18,8 @@ package org.graphper.api;
 
 import java.io.Serializable;
 import org.graphper.api.Html.Table;
+import org.graphper.api.attributes.ClusterShape;
+import org.graphper.api.attributes.ClusterShapeEnum;
 import org.graphper.api.attributes.ClusterStyle;
 import org.graphper.api.attributes.Color;
 import org.graphper.api.attributes.Labeljust;
@@ -112,6 +114,19 @@ public class Cluster extends GraphContainer implements Serializable {
     public B labeljust(Labeljust labeljust) {
       Asserts.nullArgument(labeljust, "labeljust");
       clusterAttrs.labeljust = labeljust;
+      return self();
+    }
+
+    /**
+     * Set the shape of the cluster, for the shapes supported by default, please check
+     * {@link ClusterShapeEnum}.
+     *
+     * @param shape cluster shape
+     * @return cluster builder
+     */
+    public B shape(ClusterShape shape) {
+      Asserts.nullArgument(shape, "shape");
+      clusterAttrs.shape = shape;
       return self();
     }
 

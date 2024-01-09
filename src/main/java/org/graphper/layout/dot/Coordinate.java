@@ -35,6 +35,7 @@ import org.graphper.util.Asserts;
  * segment exist in different containers, the "virtual vertex" will avoid entering the parent
  * container, which will make the line segment appear to be curved.
  */
+@Deprecated
 class Coordinate extends AbstractCoordinate {
 
   private ClusterNode clusterNode;
