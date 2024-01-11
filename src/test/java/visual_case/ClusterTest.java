@@ -331,18 +331,23 @@ public class ClusterTest extends GraphvizVisual {
 
   @Test
   public void testClusterShape_1() {
-    Node a = Node.builder().build();
-    Node b = Node.builder().build();
-    Node c = Node.builder().build();
-    Node d = Node.builder().build();
+    Node a = Node.builder().label("a").build();
+    Node b = Node.builder().label("b").build();
+    Node c = Node.builder().label("c").build();
+    Node d = Node.builder().label("d").build();
 
     Graphviz graphviz = Graphviz.digraph()
+        .label("Graph label")
         .addNode(a)
         .startClus()
+        .id("1")
         .shape(ClusterShapeEnum.PARALLELOGRAM)
+//        .shape(ClusterShapeEnum.RECT)
         .addNode(d)
         .startClus()
-        .shape(ClusterShapeEnum.TRIANGLE)
+        .id("2")
+        .shape(ClusterShapeEnum.CIRCLE)
+//        .shape(ClusterShapeEnum.RECT)
         .addNode(b, c)
         .endClus()
         .endClus()

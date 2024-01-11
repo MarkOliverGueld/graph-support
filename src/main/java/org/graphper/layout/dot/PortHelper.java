@@ -223,9 +223,9 @@ public class PortHelper {
     Asserts.nullArgument(shapePosition, "shapePosition");
 
     Cell cell = null;
-    RootCell Cell = node.getCell();
-    if (Cell != null) {
-      cell = Cell.getCellById(cellId);
+    RootCell rootCell = node.getCell();
+    if (rootCell != null) {
+      cell = rootCell.getCellById(cellId);
     }
 
     if (port == null) {
