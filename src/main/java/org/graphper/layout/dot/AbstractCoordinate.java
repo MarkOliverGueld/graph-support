@@ -21,15 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.TreeMap;
 import org.graphper.api.Cluster;
-import org.graphper.api.ClusterAttrs;
 import org.graphper.api.GraphContainer;
 import org.graphper.api.Graphviz;
-import org.graphper.api.attributes.ClusterShape;
-import org.graphper.api.attributes.ClusterShapeEnum;
 import org.graphper.api.attributes.Labelloc;
 import org.graphper.def.EdgeDedigraph;
 import org.graphper.def.FlatPoint;
@@ -38,9 +34,8 @@ import org.graphper.draw.ContainerDrawProp;
 import org.graphper.draw.DrawGraph;
 import org.graphper.draw.GraphvizDrawProp;
 import org.graphper.draw.NodeDrawProp;
-import org.graphper.layout.dot.RankContent.RankNode;
-import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
+import org.graphper.layout.dot.RankContent.RankNode;
 
 abstract class AbstractCoordinate {
 
@@ -188,7 +183,6 @@ abstract class AbstractCoordinate {
       throw new IllegalArgumentException(
           "An illegal container type occurred when calculating the top and bottom heights of the container");
     }
-    Asserts.nullArgument(containerDrawProp, "Can not get container draw prop");
     return containerDrawProp;
   }
 
@@ -336,7 +330,7 @@ abstract class AbstractCoordinate {
       }
     } else {
       containerBorder.verTopMargin = maxTopHeight + containerDrawProp.topLowestHeight();
-      containerBorder.verBottomMargin = maxBottomHeight + containerDrawProp.bottomLowestHeight();
+      containerBorder.verBottomMargin = (maxBottomHeight + containerDrawProp.bottomLowestHeight());
     }
     return containerBorder;
   }
@@ -504,176 +498,6 @@ abstract class AbstractCoordinate {
     }
 
     refreshGraphBorder(drawGraph);
-
-    if (!dotAttachment.haveClusters()) {
-      return;
-    }
-
-    Graphviz graphviz = drawGraph.getGraphviz();
-    ClusterSizeRegulator sizeRegulator = new ClusterSizeRegulator();
-    expandClusterSize(graphviz, sizeRegulator);
-    sizeRegulator.accumulateShift();
-
-    if (sizeRegulator.noNeedAdjustPos()) {
-      return;
-    }
-
-    for (int i = rankContent.minRank(); i <= rankContent.maxRank(); i++) {
-      RankNode rankNode = rankContent.get(i);
-      double yOffset = sizeRegulator.getYOffset(i);
-
-      for (int j = 0; j < rankNode.size(); j++) {
-        DNode node = rankNode.get(j);
-        double xOffset = sizeRegulator.getXOffset(node.getRank(), node.getX());
-        node.setY(node.getY() + yOffset);
-        node.setX(node.getX() + xOffset);
-        node.setAuxRank((int) node.getX());
-
-        containerAdjust(node);
-        if (!node.isVirtual()) {
-          updateNodeContainer(node, drawGraph.getNodeDrawProp(node.getNode()));
-        }
-
-        drawGraph.updateXAxisRange(node.getX() - node.leftWidth());
-        drawGraph.updateXAxisRange(node.getX() + node.rightWidth());
-        drawGraph.updateYAxisRange(node.getY() - node.topHeight());
-        drawGraph.updateYAxisRange(node.getY() + node.bottomHeight());
-      }
-    }
-
-    resizeCluster(graphviz);
-    refreshGraphBorder(drawGraph);
-  }
-
-  private FlatPoint expandClusterSize(GraphContainer container,
-                                      ClusterSizeRegulator sizeRegulator) {
-    if (container == null) {
-      return null;
-    }
-
-    FlatPoint boxSize = null;
-    ContainerDrawProp containerDrawProp = getContainerDrawProp(container);
-    if (container.haveChildCluster()) {
-      for (Cluster cluster : DotAttachment.clusters(container)) {
-        FlatPoint childSize = expandClusterSize(cluster, sizeRegulator);
-        if (childSize == null) {
-          continue;
-        }
-
-        if (boxSize == null) {
-          boxSize = childSize;
-          continue;
-        }
-
-        boxSize.setWidth(boxSize.getWidth() + childSize.getWidth());
-        boxSize.setHeight(boxSize.getHeight() + childSize.getHeight());
-      }
-
-      boxSize = new FlatPoint(containerDrawProp.getHeight(), containerDrawProp.getWidth());
-    } else {
-      boxSize = new FlatPoint(containerDrawProp.getHeight(), containerDrawProp.getWidth());
-    }
-
-    if (!container.isCluster()) {
-      return null;
-    }
-
-    ContainerBorder border = getContainerBorder(container);
-    Asserts.nullArgument(border, "Cluster rank border lacked");
-
-    /*
-     * Node box margin = container box size - inner node container size
-     */
-    double leftMargin = border.getLeft() - containerDrawProp.getLeftBorder();
-    double rightMargin = containerDrawProp.getRightBorder() - border.getRight();
-    double topMargin = border.getTop() - containerDrawProp.getUpBorder();
-    double bottomMargin = containerDrawProp.getDownBorder() - border.getBottom();
-    border.nodeBoxMargin = new NodeBoxMargin(leftMargin, rightMargin, topMargin, bottomMargin);
-    border.clearInnerBorderNodes();
-
-    Cluster cluster = (Cluster) container;
-    ClusterAttrs clusterAttrs = cluster.clusterAttrs();
-    ClusterShape shape = clusterAttrs.getShape();
-    if (shape == null || shape == ClusterShapeEnum.RECT) {
-      return null;
-    }
-
-    // Calculate the out shape box size
-    FlatPoint old = boxSize;
-    if (needFlip) {
-      boxSize.flip();
-      boxSize = shape.minContainerSize(boxSize.getHeight(), boxSize.getWidth());
-      boxSize.flip();
-    } else {
-      boxSize = shape.minContainerSize(boxSize.getHeight(), boxSize.getWidth());
-    }
-
-    double widthOffset = (boxSize.getWidth() - old.getWidth()) / 2;
-//    double heightOffset = (boxSize.getHeight() - old.getHeight()) / 2;
-    // Vertical offset should consider accumulation of inner clusters expansion size
-    sizeRegulator.rankShift(border.min, heightOffset);
-    sizeRegulator.rankShift(border.max + 1, heightOffset);
-    // Horizontal offset just put directly, use the outbox_width_size - inbox_width_size as the shift expansion size
-    sizeRegulator.rightShift(border.min, border.max,
-                             containerDrawProp.getLeftBorder(), widthOffset);
-    sizeRegulator.rightShift(border.min, border.max,
-                             containerDrawProp.getRightBorder(), widthOffset);
-    border.shapeBoxSize = boxSize;
-    return boxSize;
-  }
-
-  private void resizeCluster(GraphContainer container) {
-    if (container == null) {
-      return;
-    }
-
-    if (container.isCluster()) {
-      ContainerBorder border = getContainerBorder(container);
-      ContainerDrawProp containerDrawProp = getContainerDrawProp(container);
-      Asserts.nullArgument(border, "Cluster border");
-      Asserts.illegalArgument(border.nodeBoxMargin == null, "Cluster border not init node margin");
-      double oldWidth = containerDrawProp.getWidth();
-      double oldHeight = containerDrawProp.getHeight();
-      clearDrawProp(containerDrawProp);
-
-      FlatPoint shapeBoxSize = border.shapeBoxSize;
-      NodeBoxMargin nodeBoxMargin = border.nodeBoxMargin;
-      containerDrawProp.setLeftBorder(border.getLeft() - nodeBoxMargin.leftMargin);
-      containerDrawProp.setRightBorder(border.getRight() + nodeBoxMargin.rightMargin);
-      containerDrawProp.setUpBorder(border.getTop() - nodeBoxMargin.topMargin);
-      containerDrawProp.setDownBorder(border.getBottom() + nodeBoxMargin.bottomMargin);
-
-      if (shapeBoxSize != null) {
-        double widthOffset = (shapeBoxSize.getWidth() - oldWidth) / 2;
-        double heightOffset = (shapeBoxSize.getHeight() - oldHeight) / 2;
-
-        containerDrawProp.setLeftBorder(containerDrawProp.getLeftBorder() - widthOffset);
-        containerDrawProp.setRightBorder(containerDrawProp.getRightBorder() + widthOffset);
-        containerDrawProp.setUpBorder(containerDrawProp.getUpBorder() - heightOffset);
-        containerDrawProp.setDownBorder(containerDrawProp.getDownBorder() + heightOffset);
-      }
-
-      DrawGraph drawGraph = dotAttachment.getDrawGraph();
-      drawGraph.updateXAxisRange(containerDrawProp.getLeftBorder());
-      drawGraph.updateXAxisRange(containerDrawProp.getRightBorder());
-      drawGraph.updateYAxisRange(containerDrawProp.getUpBorder());
-      drawGraph.updateYAxisRange(containerDrawProp.getDownBorder());
-    }
-
-    if (!container.haveChildCluster()) {
-      return;
-    }
-
-    for (Cluster cluster : DotAttachment.clusters(container)) {
-      resizeCluster(cluster);
-    }
-  }
-
-  private void clearDrawProp(ContainerDrawProp drawProp) {
-    drawProp.setLeftBorder(Double.MIN_VALUE);
-    drawProp.setRightBorder(Double.MAX_VALUE);
-    drawProp.setUpBorder(Double.MIN_VALUE);
-    drawProp.setDownBorder(Double.MAX_VALUE);
   }
 
   private void containerAdjust(DNode node) {
@@ -698,10 +522,6 @@ abstract class AbstractCoordinate {
       verBottomMargin = getVerBottomMargin(clusterDrawProp.getCluster());
       updateClusterHorBorder((Cluster) container, clusterDrawProp);
       updateClusterVerBorder(node, clusterDrawProp, verTopMargin, verBottomMargin);
-      ContainerBorder containerBorder = getContainerBorder(container);
-      if (containerBorder != null) {
-        containerBorder.nodeRectRefresh(node);
-      }
       container = graphviz.effectiveFather(container);
 
       drawGraph.updateXAxisRange(clusterDrawProp.getLeftBorder());
@@ -764,6 +584,7 @@ abstract class AbstractCoordinate {
     DotLayoutEngine.nodeLabelSet(nodeDrawProp, dotAttachment.getDrawGraph(), false);
   }
 
+
   private void refreshGraphBorder(DrawGraph drawGraph) {
     GraphvizDrawProp graphvizDrawProp = drawGraph.getGraphvizDrawProp();
     double verTopMargin = getVerTopMargin(graphvizDrawProp.getGraphviz());
@@ -818,74 +639,8 @@ abstract class AbstractCoordinate {
 
     private double verBottomMargin;
 
-    private FlatPoint shapeBoxSize;
-    private DNode left;
-    private DNode right;
-    private DNode top;
-    private DNode bottom;
-
-    private NodeBoxMargin nodeBoxMargin;
-
     int width() {
       return max - min;
-    }
-
-    void nodeRectRefresh(DNode node) {
-      if (left == null || left.getLeftBorder() > node.getLeftBorder()) {
-        this.left = node;
-      }
-      if (right == null || right.getRightBorder() < node.getRightBorder()) {
-        this.right = node;
-      }
-      if (top == null || top.getUpBorder() > node.getUpBorder()) {
-        this.top = node;
-      }
-      if (bottom == null || bottom.getDownBorder() < node.getDownBorder()) {
-        this.bottom = node;
-      }
-    }
-
-    double getLeft() {
-      Asserts.illegalArgument(left == null, "Left node not init");
-      return left.getX() - left.leftWidth();
-    }
-
-    double getRight() {
-      Asserts.illegalArgument(right == null, "Right node not init");
-      return right.getX() + right.rightWidth();
-    }
-
-    double getTop() {
-      Asserts.illegalArgument(top == null, "Top node not init");
-      return top.getY() - top.topHeight();
-    }
-
-    double getBottom() {
-      Asserts.illegalArgument(bottom == null, "Bottom node not init");
-      return top.getY() + top.bottomHeight();
-    }
-
-    void clearInnerBorderNodes() {
-      left = null;
-      right = null;
-      top = null;
-      bottom = null;
-    }
-  }
-
-  private static class NodeBoxMargin {
-
-    private final double leftMargin;
-    private final double rightMargin;
-    private final double topMargin;
-    private final double bottomMargin;
-
-    NodeBoxMargin(double leftMargin, double rightMargin,
-                  double topMargin, double bottomMargin) {
-      this.leftMargin = leftMargin;
-      this.rightMargin = rightMargin;
-      this.topMargin = topMargin;
-      this.bottomMargin = bottomMargin;
     }
   }
 
@@ -894,110 +649,5 @@ abstract class AbstractCoordinate {
     private double top;
 
     private double bottom;
-  }
-
-  private static class ClusterSizeAccumulator {
-
-    void expandHeight(int startXPos, int endXPos, double expand) {
-
-    }
-
-    void expandWidth(int startRank, int endRank, double expand) {
-
-    }
-
-    FlatPoint expansionSize() {
-      return null;
-    }
-  }
-
-  private static class ClusterSizeRegulator {
-
-    private NavigableMap<Integer, Double> rankShiftRecord;
-
-    private Map<Integer, NavigableMap<Double, Double>> xShiftRecord;
-
-    boolean noNeedAdjustPos() {
-      return rankShiftRecord == null && xShiftRecord == null;
-    }
-
-    double getYOffset(int rank) {
-      if (rankShiftRecord == null) {
-        return 0;
-      }
-      Double offset = rankShiftRecord.get(rank);
-      return offset != null ? offset : 0;
-    }
-
-    double getXOffset(int rank, double originalX) {
-      if (xShiftRecord == null) {
-        return 0;
-      }
-      NavigableMap<Double, Double> rankXRecord = xShiftRecord.get(rank);
-      if (rankXRecord == null) {
-        return 0;
-      }
-      Entry<Double, Double> entry = rankXRecord.lowerEntry(originalX);
-      if (entry == null) {
-        return 0;
-      }
-      return entry.getValue() != null ? entry.getValue() : 0;
-    }
-
-    void rankShift(int rank, double offset) {
-      if (rankShiftRecord == null) {
-        rankShiftRecord = new TreeMap<>();
-      }
-
-      Double old = rankShiftRecord.get(rank);
-      if (old == null || old < offset) {
-        rankShiftRecord.put(rank, offset);
-      }
-    }
-
-    void rightShift(int startRank, int endRank, double pos, double offset) {
-      Asserts.illegalArgument(endRank < startRank, "end rank can not less than start rank");
-      if (xShiftRecord == null) {
-        xShiftRecord = new HashMap<>();
-      }
-      for (int i = startRank; i <= endRank; i++) {
-        xShiftRecord.computeIfAbsent(i, r -> new TreeMap<>()).put(pos, offset);
-      }
-    }
-
-    void accumulateShift() {
-      if (xShiftRecord == null) {
-        return;
-      }
-
-      // Horizontal offset accumulate
-      for (Entry<Integer, NavigableMap<Double, Double>> entry : xShiftRecord.entrySet()) {
-        NavigableMap<Double, Double> xShifter = entry.getValue();
-        Double value = null;
-        Entry<Double, Double> shift = xShifter.firstEntry();
-        while (shift != null) {
-          if (value != null) {
-            value += shift.getValue();
-            xShifter.put(shift.getKey(), value);
-          } else {
-            value = shift.getValue();
-          }
-          shift = xShifter.higherEntry(shift.getKey());
-        }
-      }
-
-      // Vertical offset accumulate
-      Double value = null;
-      Entry<Integer, Double> shift = rankShiftRecord.firstEntry();
-      while (shift != null) {
-        if (value != null) {
-          value += shift.getValue();
-          rankShiftRecord.put(shift.getKey(), value);
-        } else {
-          value = shift.getValue();
-        }
-        shift = rankShiftRecord.higherEntry(shift.getKey());
-      }
-    }
   }
 }
