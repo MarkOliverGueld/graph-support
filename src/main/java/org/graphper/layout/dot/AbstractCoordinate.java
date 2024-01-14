@@ -330,7 +330,7 @@ abstract class AbstractCoordinate {
       }
     } else {
       containerBorder.verTopMargin = maxTopHeight + containerDrawProp.topLowestHeight();
-      containerBorder.verBottomMargin = (maxBottomHeight + containerDrawProp.bottomLowestHeight());
+      containerBorder.verBottomMargin = maxBottomHeight + containerDrawProp.bottomLowestHeight();
     }
     return containerBorder;
   }

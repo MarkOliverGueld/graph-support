@@ -483,6 +483,7 @@ public class HtmlConvert {
     int margin = td.getCellPadding(table) + table.getCellSpacing();
     tdBox.size = td.getShape().minContainerSize(labelSize.getHeight() + margin,
                                                 labelSize.getWidth() + margin);
+    Asserts.nullArgument(tdBox.size, "Node shape cannot return null outer box size");
     tdBox.size.setWidth(Math.max(width, tdBox.size.getWidth()));
     tdBox.size.setHeight(Math.max(height, tdBox.size.getHeight()));
   }

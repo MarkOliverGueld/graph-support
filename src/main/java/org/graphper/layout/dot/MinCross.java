@@ -36,13 +36,17 @@ import org.graphper.api.Cluster;
 import org.graphper.api.GraphContainer;
 import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
+import org.graphper.api.attributes.ClusterShape;
+import org.graphper.api.attributes.ClusterShapeEnum;
 import org.graphper.def.DedirectedEdgeGraph;
 import org.graphper.def.EdgeDedigraph;
 import org.graphper.def.FlatPoint;
+import org.graphper.draw.ClusterDrawProp;
 import org.graphper.draw.DrawGraph;
 import org.graphper.layout.Mark;
 import org.graphper.layout.dot.RankContent.RankNode;
 import org.graphper.layout.dot.RootCrossRank.ExpandInfoProvider;
+import org.graphper.util.Asserts;
 import org.graphper.util.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -599,12 +603,20 @@ class MinCross {
         mergeNodes.clear();
       }
 
+      ClusterInnerSize clusterInnerSize = null;
+      if (cluster.clusterAttrs().getShape() != ClusterShapeEnum.RECT) {
+        clusterInnerSize = new ClusterInnerSize();
+      }
+
       BasicCrossRank crossRank = new BasicCrossRank(cluster);
       Iterator<Entry<DNode, DNode>> iterator = clusterMerge.mergeNodeMap.entrySet().iterator();
       while (iterator.hasNext()) {
         Entry<DNode, DNode> entry = iterator.next();
         DNode node = entry.getKey();
         DNode mergeNode = entry.getValue();
+        if (clusterInnerSize != null) {
+          clusterInnerSize.refresh(node);
+        }
 
         GraphContainer commonParent = dotAttachment.commonParent(node, mergeNode);
         if (dotAttachment.notContain(cluster, commonParent)) {
@@ -654,6 +666,20 @@ class MinCross {
         }
       }
 
+      if (clusterInnerSize != null) {
+        ClusterDrawProp drawProp = dotAttachment.getDrawGraph().getClusterDrawProp(cluster);
+        ClusterShape shape = cluster.clusterAttrs().getShape();
+        FlatPoint size = clusterInnerSize.size();
+        if (size != null) {
+          FlatPoint outSize = shape.minContainerSize(size.getHeight(), size.getWidth());
+          Asserts.nullArgument(outSize, "Cluster shape cannot return null outer box size");
+          FlatPoint margin = cluster.clusterAttrs().getMargin();
+          double verMargin = (outSize.getHeight() - size.getHeight()) / 2;
+          double horMargin = (outSize.getWidth() - size.getWidth()) / 2;
+          drawProp.setMargin(new FlatPoint(Math.max(verMargin, margin.getHeight()),
+                                           Math.max(horMargin, margin.getWidth())));
+        }
+      }
       return crossRank;
     }
 
@@ -929,6 +955,42 @@ class MinCross {
 
       mergeNodeMap.put(node, n);
       return n;
+    }
+  }
+
+  private class ClusterInnerSize {
+
+    private Map<Integer, FlatPoint> rankSize;
+
+    void refresh(DNode node) {
+      if (rankSize == null) {
+        rankSize = new HashMap<>();
+      }
+
+      rankSize.compute(node.getRank(), (r, w) -> {
+        if (w == null) {
+          return new FlatPoint(node.getHeight(), node.getNodeSep() + node.getWidth());
+        }
+        w.setHeight(Math.max(w.getHeight(), node.getHeight()));
+        w.setWidth(w.getWidth() + node.getWidth() + node.getNodeSep());
+        return w;
+      });
+    }
+
+    FlatPoint size() {
+      if (rankSize == null) {
+        return null;
+      }
+
+      double nodeSep = dotAttachment.getGraphviz().graphAttrs().getNodeSep();
+      double height = 0;
+      double width = Double.MIN_VALUE;
+      for (Entry<Integer, FlatPoint> entry : rankSize.entrySet()) {
+        width = Math.max(width, entry.getValue().getWidth());
+        height += nodeSep + entry.getValue().getHeight();
+      }
+
+      return new FlatPoint(height, width);
     }
   }
 }

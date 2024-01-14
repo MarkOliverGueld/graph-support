@@ -34,6 +34,8 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
 
   private int clusterNo;
 
+  private FlatPoint margin;
+
   private final Cluster cluster;
 
   public ClusterDrawProp(Cluster cluster) {
@@ -70,6 +72,10 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
     this.clusterNo = clusterNo;
   }
 
+  public void setMargin(FlatPoint margin) {
+    this.margin = margin;
+  }
+
   @Override
   protected Labelloc labelloc() {
     return cluster.clusterAttrs().getLabelloc();
@@ -77,6 +83,9 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
 
   @Override
   protected FlatPoint margin() {
+    if (margin != null) {
+      return margin;
+    }
     return cluster.clusterAttrs().getMargin();
   }
 

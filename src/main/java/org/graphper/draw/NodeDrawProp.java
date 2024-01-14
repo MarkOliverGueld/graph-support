@@ -48,7 +48,7 @@ public class NodeDrawProp extends ContainerDrawProp implements Serializable {
 
   private double labelVerOffset;
 
-  private RootCell Cell;
+  private RootCell cell;
 
   private boolean isCellProp;
 
@@ -130,11 +130,11 @@ public class NodeDrawProp extends ContainerDrawProp implements Serializable {
   }
 
   public RootCell getCell() {
-    return Cell;
+    return cell;
   }
 
-  public void setCell(RootCell Cell) {
-    this.Cell = Cell;
+  public void setCell(RootCell cell) {
+    this.cell = cell;
   }
 
   public void setCellContainer(NodeDrawProp cellContainer) {

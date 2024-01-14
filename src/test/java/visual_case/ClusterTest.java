@@ -30,9 +30,15 @@ import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.NodeStyle;
 import org.graphper.api.attributes.Rank;
 import org.graphper.api.attributes.Rankdir;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ClusterTest extends GraphvizVisual {
+
+  @BeforeEach
+  public void init() {
+//    System.setProperty("dot.coordinate.v1", "true");
+  }
 
   @Test
   public void case1() {
@@ -320,6 +326,7 @@ public class ClusterTest extends GraphvizVisual {
         .label("ModuleB")
         .startClus()
         .label("com.bar")
+        .shape(ClusterShapeEnum.TRIANGLE)
         .addLine(Line.builder(d, e).minlen(0).style(LineStyle.INVIS).build())
         .endClus()
         .endClus()
@@ -341,12 +348,11 @@ public class ClusterTest extends GraphvizVisual {
         .addNode(a)
         .startClus()
         .id("1")
-        .shape(ClusterShapeEnum.PARALLELOGRAM)
 //        .shape(ClusterShapeEnum.RECT)
         .addNode(d)
         .startClus()
         .id("2")
-        .shape(ClusterShapeEnum.CIRCLE)
+        .shape(ClusterShapeEnum.PARALLELOGRAM)
 //        .shape(ClusterShapeEnum.RECT)
         .addNode(b, c)
         .endClus()
