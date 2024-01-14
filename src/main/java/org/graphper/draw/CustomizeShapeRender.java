@@ -100,7 +100,17 @@ public abstract class CustomizeShapeRender {
    * @param nodeBrush    svg brush for drawing
    * @param nodeDrawProp node draw properties
    */
-  public abstract void drawSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp);
+  public void drawNodeSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp) {
+  }
+
+  /**
+   * Draw cluster shapes under the svg structure.
+   *
+   * @param clusterBrush    svg brush for drawing
+   * @param clusterDrawProp cluster draw properties
+   */
+  public void drawClusterSvg(SvgBrush clusterBrush, ClusterDrawProp clusterDrawProp) {
+  }
 
   // --------------------------------- private method ---------------------------------
 

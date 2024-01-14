@@ -47,7 +47,7 @@ public class NodeShapeEditor extends AbstractNodeShapeEditor {
     CustomizeShapeRender customizeShapeRender = CustomizeShapeRender
         .getCustomizeShapeRender(nodeShape.getName());
     if (customizeShapeRender != null) {
-      customizeShapeRender.drawSvg(brush, nodeDrawProp);
+      customizeShapeRender.drawNodeSvg(brush, nodeDrawProp);
     } else if (nodeShape instanceof NodeShapeEnum) {
       drawNodeShapeEnum(nodeDrawProp, (NodeShapeEnum) nodeShape, brush);
     }

@@ -22,6 +22,8 @@ import org.graphper.api.Graphviz;
 import org.graphper.api.Line;
 import org.graphper.api.Node;
 import org.graphper.api.attributes.ClusterShapeEnum;
+import org.graphper.api.attributes.ClusterStyle;
+import org.graphper.api.attributes.Color;
 import org.graphper.api.attributes.Dir;
 import org.graphper.api.attributes.Labeljust;
 import org.graphper.api.attributes.Labelloc;
@@ -326,7 +328,6 @@ public class ClusterTest extends GraphvizVisual {
         .label("ModuleB")
         .startClus()
         .label("com.bar")
-        .shape(ClusterShapeEnum.TRIANGLE)
         .addLine(Line.builder(d, e).minlen(0).style(LineStyle.INVIS).build())
         .endClus()
         .endClus()
@@ -342,19 +343,26 @@ public class ClusterTest extends GraphvizVisual {
     Node b = Node.builder().label("b").build();
     Node c = Node.builder().label("c").build();
     Node d = Node.builder().label("d").build();
+    Node e = Node.builder().label("e").build();
+    Node f = Node.builder().label("f").build();
+    Node g = Node.builder().label("g").shape(NodeShapeEnum.HEXAGON).build();
 
     Graphviz graphviz = Graphviz.digraph()
+        .scale(0.7)
         .label("Graph label")
         .addNode(a)
         .startClus()
         .id("1")
-//        .shape(ClusterShapeEnum.RECT)
+        .style(ClusterStyle.DASHED)
+        .shape(ClusterShapeEnum.PARALLELOGRAM)
+//        .margin(1.5)
         .addNode(d)
         .startClus()
         .id("2")
-        .shape(ClusterShapeEnum.PARALLELOGRAM)
+        .shape(ClusterShapeEnum.TRAPEZIUM)
+        .color(Color.RED)
 //        .shape(ClusterShapeEnum.RECT)
-        .addNode(b, c)
+        .addLine(b, c, e, f, g)
         .endClus()
         .endClus()
         .build();

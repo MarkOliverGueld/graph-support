@@ -45,7 +45,7 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
   public RegularPolylinePropCalc() {
   }
 
-  private RegularPolylinePropCalc(int side) {
+  protected RegularPolylinePropCalc(int side) {
     Asserts.illegalArgument(side <= 0, "side can not be lower than 0");
     this.side = side;
   }
@@ -114,18 +114,32 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
 
   // -------------------------- Shape proxy handler --------------------------
 
-  public static class RegularPolyNodePost implements NodeShapePost {
+  public static class RegularPolyNodePost implements NodeShapePost, Serializable {
+
+    private static final long serialVersionUID = -814521973404226705L;
+
+    private Integer slideSize;
+
+    public RegularPolyNodePost() {
+    }
+
+    public RegularPolyNodePost(Integer slideSize) {
+      this.slideSize = slideSize;
+    }
 
     @Override
     public NodeShape post(NodeAttrs nodeAttrs) {
       Asserts.nullArgument(nodeAttrs, "nodeAttrs");
       NodeShape nodeShape = nodeAttrs.getNodeShape();
-      Integer nodeSide = nodeAttrs.getSides();
-      if (nodeSide == null) {
-        return nodeShape;
+      Integer size;
+      if (slideSize != null) {
+        size = slideSize;
+      } else {
+        size = nodeAttrs.getSides();
       }
+      size = size == null ? 4 : size;
 
-      RegularPolylinePropCalc propCalc = new RegularPolylinePropCalc(nodeSide);
+      RegularPolylinePropCalc propCalc = new RegularPolylinePropCalc(size);
       return (NodeShape) Proxy.newProxyInstance(
           NodeShape.class.getClassLoader(),
           new Class[]{NodeShape.class},

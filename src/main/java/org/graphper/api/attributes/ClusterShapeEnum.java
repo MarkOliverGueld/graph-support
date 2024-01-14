@@ -19,21 +19,14 @@ package org.graphper.api.attributes;
 import java.util.Objects;
 import org.graphper.api.ext.Box;
 import org.graphper.api.ext.CirclePropCalc;
-import org.graphper.api.ext.CylinderPropCalc;
-import org.graphper.api.ext.DiamondPropCalc;
 import org.graphper.api.ext.EllipsePropCalc;
-import org.graphper.api.ext.NotePropCalc;
 import org.graphper.api.ext.ParallelogramPropCalc;
 import org.graphper.api.ext.RectanglePropCalc;
 import org.graphper.api.ext.ShapePropCalc;
-import org.graphper.api.ext.StarPropCalc;
 import org.graphper.api.ext.TrapeziumPropCalc;
-import org.graphper.api.ext.TrianglePropCalc;
 import org.graphper.def.FlatPoint;
 
 public enum ClusterShapeEnum implements ClusterShape {
-
-  NOTE("note", new NotePropCalc()),
 
   ELLIPSE("ellipse", new EllipsePropCalc()),
 
@@ -41,17 +34,9 @@ public enum ClusterShapeEnum implements ClusterShape {
 
   RECT("rect", new RectanglePropCalc()),
 
-  TRIANGLE("triangle", new TrianglePropCalc()),
-
-  DIAMOND("diamond", new DiamondPropCalc()),
-
   TRAPEZIUM("trapezium", new TrapeziumPropCalc()),
 
-  PARALLELOGRAM("parallelogram", new ParallelogramPropCalc()),
-
-  STAR("star", new StarPropCalc()),
-
-  CYLINDER("cylinder", new CylinderPropCalc());
+  PARALLELOGRAM("parallelogram", new ParallelogramPropCalc());
 
   private final String name;
 

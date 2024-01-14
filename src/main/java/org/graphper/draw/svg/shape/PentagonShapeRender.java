@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package org.graphper.api.attributes;
+package org.graphper.draw.svg.shape;
 
-import java.io.Serializable;
-import org.graphper.api.ext.ShapePropCalc;
+import org.graphper.api.attributes.NodeShapeEnum;
 
-public interface ClusterShape extends ShapePropCalc, Serializable {
+public class PentagonShapeRender extends RegularShapeRender {
 
-  /**
-   * Returns the shape name.
-   *
-   * @return the shape name
-   */
-  String getName();
+  @Override
+  public String getShapeName() {
+    return NodeShapeEnum.PENTAGON.getName();
+  }
 }

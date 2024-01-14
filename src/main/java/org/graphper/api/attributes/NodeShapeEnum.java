@@ -77,6 +77,14 @@ public enum NodeShapeEnum implements NodeShape {
 
   CYLINDER("cylinder", new CylinderPropCalc()),
 
+  PENTAGON("pentagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(5)),
+
+  HEXAGON("hexagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(6)),
+
+  SEPTAGON("septagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(7)),
+
+  OCTAGON("octagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(8)),
+
   /**
    * Rules and more deformations, like: square, regular pentagon, regular hexagon. Please check
    * {@link NodeBuilder#sides(int)}.

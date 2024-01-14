@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package org.graphper.draw;
+package org.graphper.draw.svg.shape;
 
 import java.util.List;
+import org.graphper.draw.ClusterDrawProp;
+import org.graphper.draw.CustomizeShapeRender;
+import org.graphper.draw.NodeDrawProp;
 import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
 import org.graphper.draw.svg.SvgConstants;
@@ -30,7 +33,7 @@ import org.graphper.api.ext.RegularPolylinePropCalc;
 public class RegularShapeRender extends CustomizeShapeRender {
 
   @Override
-  public void drawSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp) {
+  public void drawNodeSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp) {
     NodeShape nodeShape = nodeDrawProp.nodeAttrs().getNodeShape();
     RegularPolylinePropCalc shapePropCalc =
         (RegularPolylinePropCalc) nodeShape.getShapePropCalc();
@@ -46,7 +49,44 @@ public class RegularShapeRender extends CustomizeShapeRender {
   }
 
   @Override
+  public void drawClusterSvg(SvgBrush clusterBrush, ClusterDrawProp clusterDrawProp) {
+    super.drawClusterSvg(clusterBrush, clusterDrawProp);
+  }
+
+  @Override
   public String getShapeName() {
     return NodeShapeEnum.REGULAR_POLYLINE.getName();
+  }
+
+  public static class PentagonShapeRender extends RegularShapeRender {
+
+    @Override
+    public String getShapeName() {
+      return NodeShapeEnum.PENTAGON.getName();
+    }
+  }
+
+  public static class HexagonShapeRender extends RegularShapeRender {
+
+    @Override
+    public String getShapeName() {
+      return NodeShapeEnum.HEXAGON.getName();
+    }
+  }
+
+  public static class SeptagonShapeRender extends RegularShapeRender {
+
+    @Override
+    public String getShapeName() {
+      return NodeShapeEnum.SEPTAGON.getName();
+    }
+  }
+
+  public static class OctagonShapeRender extends RegularShapeRender {
+
+    @Override
+    public String getShapeName() {
+      return NodeShapeEnum.OCTAGON.getName();
+    }
   }
 }
