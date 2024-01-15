@@ -22,6 +22,7 @@ import org.graphper.api.ext.CirclePropCalc;
 import org.graphper.api.ext.EllipsePropCalc;
 import org.graphper.api.ext.ParallelogramPropCalc;
 import org.graphper.api.ext.RectanglePropCalc;
+import org.graphper.api.ext.RegularPolylinePropCalc;
 import org.graphper.api.ext.ShapePropCalc;
 import org.graphper.api.ext.TrapeziumPropCalc;
 import org.graphper.def.FlatPoint;
@@ -36,7 +37,15 @@ public enum ClusterShapeEnum implements ClusterShape {
 
   TRAPEZIUM("trapezium", new TrapeziumPropCalc()),
 
-  PARALLELOGRAM("parallelogram", new ParallelogramPropCalc());
+  PARALLELOGRAM("parallelogram", new ParallelogramPropCalc()),
+
+  PENTAGON("pentagon", new RegularPolylinePropCalc(5)),
+
+  HEXAGON("hexagon", new RegularPolylinePropCalc(6)),
+
+  SEPTAGON("septagon", new RegularPolylinePropCalc(7)),
+
+  OCTAGON("octagon", new RegularPolylinePropCalc(8));
 
   private final String name;
 

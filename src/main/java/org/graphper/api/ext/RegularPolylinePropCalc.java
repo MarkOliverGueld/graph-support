@@ -45,7 +45,7 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
   public RegularPolylinePropCalc() {
   }
 
-  protected RegularPolylinePropCalc(int side) {
+  public RegularPolylinePropCalc(int side) {
     Asserts.illegalArgument(side <= 0, "side can not be lower than 0");
     this.side = side;
   }

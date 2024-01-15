@@ -29,7 +29,7 @@ public interface ShapePosition extends Box {
    * Returns a primitive describing the shape the current object should conform to. Although
    * {@link NodeShape} is used to describe, the current element is not necessarily a node.
    *
-   * @return current element shape
+   * @return current shape properties describe function
    */
-  NodeShape nodeShape();
+  ShapePropCalc shapeProp();
 }

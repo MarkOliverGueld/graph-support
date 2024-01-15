@@ -21,8 +21,8 @@ import org.graphper.api.Assemble;
 import org.graphper.api.Node;
 import org.graphper.api.NodeAttrs;
 import org.graphper.api.attributes.Labelloc;
-import org.graphper.api.attributes.NodeShape;
 import org.graphper.api.attributes.Rankdir;
+import org.graphper.api.ext.ShapePropCalc;
 import org.graphper.def.FlatPoint;
 import org.graphper.layout.Cell.RootCell;
 import org.graphper.util.Asserts;
@@ -109,7 +109,7 @@ public class NodeDrawProp extends ContainerDrawProp implements Serializable {
   }
 
   @Override
-  public NodeShape nodeShape() {
+  public ShapePropCalc shapeProp() {
     return nodeAttrs.getNodeShape();
   }
 
