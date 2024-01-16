@@ -344,8 +344,8 @@ public class ClusterTest extends GraphvizVisual {
     Node c = Node.builder().label("c").build();
     Node d = Node.builder().label("d").build();
     Node e = Node.builder().label("e").build();
-    Node f = Node.builder().label("f").build();
-    Node g = Node.builder().label("g").shape(NodeShapeEnum.HEXAGON).build();
+    Node f = Node.builder().label("f").sides(5).build();
+    Node g = Node.builder().label("g").sides(6).build();
 
     Graphviz graphviz = Graphviz.digraph()
         .scale(0.7)
@@ -354,12 +354,13 @@ public class ClusterTest extends GraphvizVisual {
         .startClus()
         .id("1")
         .style(ClusterStyle.DASHED)
-        .shape(ClusterShapeEnum.PARALLELOGRAM)
+        .shape(ClusterShapeEnum.SEPTAGON)
 //        .margin(1.5)
         .addNode(d)
         .startClus()
         .id("2")
-        .shape(ClusterShapeEnum.TRAPEZIUM)
+        .tempNode(Node.builder().shape(NodeShapeEnum.REGULAR_POLYLINE).build())
+        .shape(ClusterShapeEnum.HEXAGON)
         .color(Color.RED)
 //        .shape(ClusterShapeEnum.RECT)
         .addLine(b, c, e, f, g)

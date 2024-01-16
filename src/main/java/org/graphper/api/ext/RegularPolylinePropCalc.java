@@ -22,7 +22,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import org.graphper.api.ClusterAttrs;
 import org.graphper.api.NodeAttrs;
+import org.graphper.api.attributes.ClusterShape;
 import org.graphper.api.attributes.NodeShape;
 import org.graphper.def.FlatPoint;
 import org.graphper.def.UnfeasibleException;
@@ -114,16 +116,16 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
 
   // -------------------------- Shape proxy handler --------------------------
 
-  public static class RegularPolyNodePost implements NodeShapePost, Serializable {
+  public static class RegularPolyShapePost implements NodeShapePost, ClusterShapePost, Serializable {
 
     private static final long serialVersionUID = -814521973404226705L;
 
     private Integer slideSize;
 
-    public RegularPolyNodePost() {
+    public RegularPolyShapePost() {
     }
 
-    public RegularPolyNodePost(Integer slideSize) {
+    public RegularPolyShapePost(Integer slideSize) {
       this.slideSize = slideSize;
     }
 
@@ -144,6 +146,18 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
           NodeShape.class.getClassLoader(),
           new Class[]{NodeShape.class},
           new RegularProxyInvoker(nodeShape, propCalc));
+    }
+
+    @Override
+    public ClusterShape post(ClusterAttrs clusterAttrs) {
+      Asserts.nullArgument(clusterAttrs, "clusterAttrs");
+      ClusterShape clusterShape = clusterAttrs.getShape();
+      RegularPolylinePropCalc propCalc = new RegularPolylinePropCalc(
+          slideSize == null ? 4 : slideSize);
+      return (ClusterShape) Proxy.newProxyInstance(
+          ClusterShape.class.getClassLoader(),
+          new Class[]{ClusterShape.class},
+          new RegularProxyInvoker(clusterShape, propCalc));
     }
   }
 
@@ -212,13 +226,13 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
   // -------------------------- Shape proxy handler --------------------------
   private static class RegularProxyInvoker implements InvocationHandler {
 
-    private final NodeShape nodeShape;
+    private final Object originalShape;
 
     private final RegularPolylinePropCalc propCalc;
 
-    public RegularProxyInvoker(NodeShape nodeShape,
+    public RegularProxyInvoker(Object originalShape,
                                RegularPolylinePropCalc propCalc) {
-      this.nodeShape = nodeShape;
+      this.originalShape = originalShape;
       this.propCalc = propCalc;
     }
 
@@ -233,7 +247,7 @@ public class RegularPolylinePropCalc implements ShapePropCalc, Serializable {
       if (method.getName().equals("getShapePropCalc")) {
         return propCalc;
       }
-      return method.invoke(nodeShape, args);
+      return method.invoke(originalShape, args);
     }
   }
 }

@@ -32,7 +32,7 @@ import org.graphper.api.ext.PointPropCalc;
 import org.graphper.api.ext.RecordPropCalc;
 import org.graphper.api.ext.RectanglePropCalc;
 import org.graphper.api.ext.RegularPolylinePropCalc;
-import org.graphper.api.ext.RegularPolylinePropCalc.RegularPolyNodePost;
+import org.graphper.api.ext.RegularPolylinePropCalc.RegularPolyShapePost;
 import org.graphper.api.ext.ShapeCenterCalc;
 import org.graphper.api.ext.ShapePropCalc;
 import org.graphper.api.ext.StarPropCalc;
@@ -77,20 +77,20 @@ public enum NodeShapeEnum implements NodeShape {
 
   CYLINDER("cylinder", new CylinderPropCalc()),
 
-  PENTAGON("pentagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(5)),
+  PENTAGON("pentagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyShapePost(5)),
 
-  HEXAGON("hexagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(6)),
+  HEXAGON("hexagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyShapePost(6)),
 
-  SEPTAGON("septagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(7)),
+  SEPTAGON("septagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyShapePost(7)),
 
-  OCTAGON("octagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyNodePost(8)),
+  OCTAGON("octagon", 0.75, 0.75, new RegularPolylinePropCalc(), new RegularPolyShapePost(8)),
 
   /**
    * Rules and more deformations, like: square, regular pentagon, regular hexagon. Please check
    * {@link NodeBuilder#sides(int)}.
    */
   REGULAR_POLYLINE("regular_polyline", 0.75, 0.75,
-                   new RegularPolylinePropCalc(), new RegularPolyNodePost()),
+                   new RegularPolylinePropCalc(), new RegularPolyShapePost()),
 
   /**
    * When the node label is an <strong>Cell Expression</strong>, the node will be displayed as a

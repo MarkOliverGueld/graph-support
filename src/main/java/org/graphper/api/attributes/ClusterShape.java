@@ -17,9 +17,10 @@
 package org.graphper.api.attributes;
 
 import java.io.Serializable;
+import org.graphper.api.ext.ClusterShapePost;
 import org.graphper.api.ext.ShapePropCalc;
 
-public interface ClusterShape extends ShapePropCalc, Serializable {
+public interface ClusterShape extends ShapePropCalc, ClusterShapePost, Serializable {
 
   /**
    * Returns the shape name.
@@ -27,4 +28,13 @@ public interface ClusterShape extends ShapePropCalc, Serializable {
    * @return the shape name
    */
   String getName();
+
+  /**
+   * Returns the cluster shape attribute description object.
+   *
+   * @return cluster shape attribute description object
+   */
+  default ShapePropCalc getShapePropCalc() {
+    return this;
+  }
 }

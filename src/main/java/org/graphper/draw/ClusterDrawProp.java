@@ -18,10 +18,11 @@ package org.graphper.draw;
 
 import java.io.Serializable;
 import org.graphper.api.Assemble;
+import org.graphper.api.Cluster;
+import org.graphper.api.attributes.ClusterShape;
+import org.graphper.api.attributes.Labelloc;
 import org.graphper.def.FlatPoint;
 import org.graphper.util.Asserts;
-import org.graphper.api.Cluster;
-import org.graphper.api.attributes.Labelloc;
 
 /**
  * Cluster's rendering description object.
@@ -38,9 +39,13 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
 
   private final Cluster cluster;
 
+  private ClusterShape clusterShape;
+
   public ClusterDrawProp(Cluster cluster) {
     Asserts.nullArgument(cluster, "cluster");
     this.cluster = cluster;
+    this.clusterShape = cluster.clusterAttrs().getShape();
+    this.clusterShape = this.clusterShape.post(cluster.clusterAttrs());
     convertTable(cluster.clusterAttrs().getTable());
   }
 
@@ -97,5 +102,10 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
   @Override
   protected Assemble assemble() {
     return cluster.clusterAttrs().getAssemble();
+  }
+
+  @Override
+  public ClusterShape shapeProp() {
+    return clusterShape != null ? clusterShape : cluster.clusterAttrs().getShape();
   }
 }

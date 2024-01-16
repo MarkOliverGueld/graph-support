@@ -17,12 +17,15 @@
 package org.graphper.api.attributes;
 
 import java.util.Objects;
+import org.graphper.api.ClusterAttrs;
 import org.graphper.api.ext.Box;
 import org.graphper.api.ext.CirclePropCalc;
+import org.graphper.api.ext.ClusterShapePost;
 import org.graphper.api.ext.EllipsePropCalc;
 import org.graphper.api.ext.ParallelogramPropCalc;
 import org.graphper.api.ext.RectanglePropCalc;
 import org.graphper.api.ext.RegularPolylinePropCalc;
+import org.graphper.api.ext.RegularPolylinePropCalc.RegularPolyShapePost;
 import org.graphper.api.ext.ShapePropCalc;
 import org.graphper.api.ext.TrapeziumPropCalc;
 import org.graphper.def.FlatPoint;
@@ -39,22 +42,31 @@ public enum ClusterShapeEnum implements ClusterShape {
 
   PARALLELOGRAM("parallelogram", new ParallelogramPropCalc()),
 
-  PENTAGON("pentagon", new RegularPolylinePropCalc(5)),
+  PENTAGON("pentagon", new RegularPolylinePropCalc(), new RegularPolyShapePost(5)),
 
-  HEXAGON("hexagon", new RegularPolylinePropCalc(6)),
+  HEXAGON("hexagon", new RegularPolylinePropCalc(), new RegularPolyShapePost(6)),
 
-  SEPTAGON("septagon", new RegularPolylinePropCalc(7)),
+  SEPTAGON("septagon", new RegularPolylinePropCalc(), new RegularPolyShapePost(7)),
 
-  OCTAGON("octagon", new RegularPolylinePropCalc(8));
+  OCTAGON("octagon", new RegularPolylinePropCalc(), new RegularPolyShapePost(8));
 
   private final String name;
 
   private final ShapePropCalc shapePropCalc;
 
+  private final ClusterShapePost clusterShapePost;
+
   ClusterShapeEnum(String name, ShapePropCalc shapePropCalc) {
+    this(name, shapePropCalc, null);
+  }
+
+  ClusterShapeEnum(String name, ShapePropCalc shapePropCalc,
+                   ClusterShapePost clusterShapePost) {
+    Objects.requireNonNull(name);
     Objects.requireNonNull(shapePropCalc);
     this.name = name;
     this.shapePropCalc = shapePropCalc;
+    this.clusterShapePost = clusterShapePost;
   }
 
   @Override
@@ -67,7 +79,16 @@ public enum ClusterShapeEnum implements ClusterShape {
     return shapePropCalc.in(box, point);
   }
 
+  @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public ClusterShape post(ClusterAttrs clusterAttrs) {
+    if (clusterShapePost == null) {
+      return this;
+    }
+    return clusterShapePost.post(clusterAttrs);
   }
 }
