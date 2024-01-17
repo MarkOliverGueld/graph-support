@@ -19,11 +19,7 @@ package visual_case;
 import static org.graphper.api.Html.table;
 import static org.graphper.api.Html.td;
 
-import helper.DocumentUtils;
 import helper.GraphvizVisual;
-import helper.SerialHelper;
-import java.io.File;
-import java.io.IOException;
 import org.graphper.api.Cluster;
 import org.graphper.api.FloatLabel;
 import org.graphper.api.Graphviz;
@@ -307,13 +303,6 @@ public class BugCaseTest extends GraphvizVisual {
         .build();
 
     visual(graphviz);
-  }
-
-  @Test
-  public void testWrongClusterFromSerial() throws IOException, ClassNotFoundException {
-    SerialHelper.readObj(o -> {
-      visual((Graphviz) o);
-    }, new File(DocumentUtils.getTestSerialPath() + "graph1"));
   }
 
   @Test

@@ -52,12 +52,16 @@ public class ClusterStyleEditor extends SvgEditor implements ClusterEditor<SvgBr
   }
 
   private void dashed(Element cluster) {
-    cluster.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    if (cluster.getAttribute(SvgConstants.FILL) == null) {
+      cluster.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    }
     cluster.setAttribute(SvgConstants.STROKE_DASHARRAY, "5,2");
   }
 
   private void dotted(Element cluster) {
-    cluster.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    if (cluster.getAttribute(SvgConstants.FILL) == null) {
+      cluster.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    }
     cluster.setAttribute(SvgConstants.STROKE_DASHARRAY, "1,5");
   }
 
