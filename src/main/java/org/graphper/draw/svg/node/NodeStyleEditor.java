@@ -75,12 +75,16 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
   }
 
   private void dashed(Element shape) {
-    shape.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    if (shape.getAttribute(SvgConstants.FILL) == null) {
+      shape.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    }
     shape.setAttribute(SvgConstants.STROKE_DASHARRAY, "5,2");
   }
 
   private void dotted(Element shape) {
-    shape.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    if (shape.getAttribute(SvgConstants.FILL) == null) {
+      shape.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+    }
     shape.setAttribute(SvgConstants.STROKE_DASHARRAY, "1,5");
   }
 
