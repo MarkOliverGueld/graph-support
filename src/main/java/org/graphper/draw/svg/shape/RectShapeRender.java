@@ -16,26 +16,18 @@
 
 package org.graphper.draw.svg.shape;
 
-import static org.graphper.draw.svg.SvgConstants.D;
-import static org.graphper.draw.svg.SvgConstants.PATH_ELE;
-import static org.graphper.draw.svg.SvgConstants.POLYGON_ELE;
-import static org.graphper.draw.svg.SvgConstants.SHAPE_GROUP_KEY;
 import static org.graphper.draw.svg.SvgConstants.STROKE_WIDTH;
 
-import org.graphper.api.Cluster;
-import org.graphper.api.attributes.ClusterStyle;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.draw.ClusterDrawProp;
+import org.graphper.draw.ContainerDrawProp;
 import org.graphper.draw.CustomizeShapeRender;
 import org.graphper.draw.NodeDrawProp;
 import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
-import org.graphper.draw.svg.SvgConstants;
 import org.graphper.draw.svg.SvgEditor;
 
 public class RectShapeRender extends CustomizeShapeRender {
-
-  private static final int MAX_CLUSTER_ROUNDED = 60;
 
   @Override
   public String getShapeName() {
@@ -44,30 +36,24 @@ public class RectShapeRender extends CustomizeShapeRender {
 
   @Override
   public void drawNodeSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp) {
-    Element shapeEle = nodeBrush.getShapeElement(nodeDrawProp, POLYGON_ELE);
-    String points = SvgEditor.generateBox(nodeDrawProp);
-    shapeEle.setAttribute(SvgConstants.POINTS, points);
+    draw(nodeBrush, nodeDrawProp);
   }
 
   @Override
   public void drawClusterSvg(SvgBrush clusterBrush, ClusterDrawProp clusterDrawProp) {
-    Element clusterEle;
-    Cluster cluster = clusterDrawProp.getCluster();
-    ClusterStyle style = cluster.clusterAttrs().getStyle();
-    String points;
-
-    if (style == ClusterStyle.ROUNDED) {
-      clusterEle = clusterBrush.getShapeElement(clusterDrawProp, PATH_ELE);
-      points = SvgEditor.roundedBox(MAX_CLUSTER_ROUNDED, clusterDrawProp);
-      clusterEle.setAttribute(D, points);
-    } else {
-      clusterEle = clusterBrush.getShapeElement(clusterDrawProp, POLYGON_ELE);
-      points = SvgEditor.generateBox(clusterDrawProp);
-      clusterEle.setAttribute(SvgConstants.POINTS, points);
-    }
-
-    clusterBrush.addGroup(SHAPE_GROUP_KEY, clusterEle);
-    double penWidth = cluster.clusterAttrs().getPenWidth();
+    Element clusterEle = draw(clusterBrush, clusterDrawProp);
+    double penWidth = clusterDrawProp.getCluster().clusterAttrs().getPenWidth();
     clusterEle.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
+
+
+  }
+
+  private Element draw(SvgBrush brush, ContainerDrawProp box) {
+    return SvgEditor.polygonShape(box, brush, box.getLeftBorder(), box.getUpBorder(),
+                                  box.getRightBorder(), box.getUpBorder(),
+                                  box.getRightBorder(), box.getDownBorder(),
+                                  box.getLeftBorder(), box.getDownBorder(),
+                                  box.getLeftBorder(), box.getUpBorder());
+
   }
 }

@@ -16,16 +16,12 @@
 
 package org.graphper.draw.svg.shape;
 
-import static org.graphper.draw.svg.SvgConstants.POLYGON_ELE;
-
 import org.graphper.api.attributes.NodeShapeEnum;
-import org.graphper.api.ext.Box;
 import org.graphper.draw.ClusterDrawProp;
+import org.graphper.draw.ContainerDrawProp;
 import org.graphper.draw.CustomizeShapeRender;
 import org.graphper.draw.NodeDrawProp;
-import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
-import org.graphper.draw.svg.SvgConstants;
 import org.graphper.draw.svg.SvgEditor;
 
 public class ParallelogramShapeRender extends CustomizeShapeRender {
@@ -36,25 +32,22 @@ public class ParallelogramShapeRender extends CustomizeShapeRender {
   }
 
   @Override
-  public void drawNodeSvg(SvgBrush nodeBrush, NodeDrawProp box) {
-    Element clusterEle = nodeBrush.getShapeElement(box, POLYGON_ELE);
-    draw(box, clusterEle);
+  public void drawNodeSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp) {
+    draw(nodeDrawProp, nodeBrush);
   }
 
   @Override
   public void drawClusterSvg(SvgBrush clusterBrush, ClusterDrawProp clusterDrawProp) {
-    Element clusterEle = clusterBrush.getShapeElement(clusterDrawProp, POLYGON_ELE);
-    draw(clusterDrawProp, clusterEle);
+    draw(clusterDrawProp, clusterBrush);
   }
 
-  private void draw(Box box, Element shapeElement) {
+  private void draw(ContainerDrawProp box, SvgBrush brush) {
     double leftTopX = box.getLeftBorder() + box.getWidth() / 5;
     double rightDownX = box.getRightBorder() - box.getWidth() / 5;
-    String points = SvgEditor.generatePolylinePoints(box.getLeftBorder(), box.getDownBorder(),
-                                                     leftTopX, box.getUpBorder(),
-                                                     box.getRightBorder(), box.getUpBorder(),
-                                                     rightDownX, box.getDownBorder(),
-                                                     box.getLeftBorder(), box.getDownBorder());
-    shapeElement.setAttribute(SvgConstants.POINTS, points);
+    SvgEditor.polygonShape(box, brush, box.getLeftBorder(), box.getDownBorder(),
+                           leftTopX, box.getUpBorder(),
+                           box.getRightBorder(), box.getUpBorder(),
+                           rightDownX, box.getDownBorder(),
+                           box.getLeftBorder(), box.getDownBorder());
   }
 }

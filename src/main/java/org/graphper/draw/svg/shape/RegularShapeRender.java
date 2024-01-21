@@ -20,15 +20,13 @@ import java.util.List;
 import org.graphper.api.attributes.ClusterShape;
 import org.graphper.api.attributes.NodeShape;
 import org.graphper.api.attributes.NodeShapeEnum;
-import org.graphper.api.ext.Box;
 import org.graphper.api.ext.RegularPolylinePropCalc;
 import org.graphper.def.FlatPoint;
 import org.graphper.draw.ClusterDrawProp;
+import org.graphper.draw.ContainerDrawProp;
 import org.graphper.draw.CustomizeShapeRender;
 import org.graphper.draw.NodeDrawProp;
-import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
-import org.graphper.draw.svg.SvgConstants;
 import org.graphper.draw.svg.SvgEditor;
 import org.graphper.util.CollectionUtils;
 
@@ -37,29 +35,33 @@ public class RegularShapeRender extends CustomizeShapeRender {
   @Override
   public void drawNodeSvg(SvgBrush nodeBrush, NodeDrawProp nodeDrawProp) {
     NodeShape nodeShape = nodeDrawProp.nodeAttrs().getNodeShape();
-    Element shapeElement = nodeBrush.getShapeElement(nodeDrawProp, SvgConstants.POLYGON_ELE);
     RegularPolylinePropCalc shapePropCalc =
         (RegularPolylinePropCalc) nodeShape.getShapePropCalc();
-    draw(nodeDrawProp, shapeElement, shapePropCalc);
+    draw(nodeDrawProp, nodeBrush, shapePropCalc);
   }
 
   @Override
   public void drawClusterSvg(SvgBrush clusterBrush, ClusterDrawProp clusterDrawProp) {
     ClusterShape clusterShape = clusterDrawProp.shapeProp();
-    Element shapeElement = clusterBrush.getShapeElement(clusterDrawProp, SvgConstants.POLYGON_ELE);
     RegularPolylinePropCalc shapePropCalc =
         (RegularPolylinePropCalc) clusterShape.getShapePropCalc();
-    draw(clusterDrawProp, shapeElement, shapePropCalc);
+    draw(clusterDrawProp, clusterBrush, shapePropCalc);
   }
 
-  private void draw(Box box, Element shapeElement, RegularPolylinePropCalc shapePropCalc) {
+  private void draw(ContainerDrawProp box, SvgBrush svgBrush, RegularPolylinePropCalc shapePropCalc) {
     List<FlatPoint> points = shapePropCalc.calcPoints(box);
     if (CollectionUtils.isEmpty(points)) {
       return;
     }
 
-    String pointsStr = SvgEditor.generatePolylinePoints(points);
-    shapeElement.setAttribute(SvgConstants.POINTS, pointsStr);
+    double[] path = new double[points.size() * 2 + 2];
+    for (int i = 0; i < points.size(); i++) {
+      path[i * 2] = points.get(i).getX();
+      path[i * 2 + 1] = points.get(i).getY();
+    }
+    path[path.length - 2] = path[0];
+    path[path.length - 1] = path[1];
+    SvgEditor.polygonShape(box,svgBrush, path);
   }
 
   @Override

@@ -339,28 +339,30 @@ public class ClusterTest extends GraphvizVisual {
 
   @Test
   public void testClusterShape_1() {
-    Node a = Node.builder().label("a").build();
-    Node b = Node.builder().label("b").build();
-    Node c = Node.builder().label("c").build();
+    Node a = Node.builder().shape(NodeShapeEnum.RECT)
+        .style(NodeStyle.ROUNDED)
+        .label("a").build();
+    Node b = Node.builder().label("b").shape(NodeShapeEnum.PARALLELOGRAM).build();
+    Node c = Node.builder().label("c").shape(NodeShapeEnum.TRAPEZIUM).build();
     Node d = Node.builder().label("d").build();
     Node e = Node.builder().label("e").build();
     Node f = Node.builder().label("f").sides(5).build();
     Node g = Node.builder().label("g").sides(6).build();
 
     Graphviz graphviz = Graphviz.digraph()
-        .scale(0.7)
         .label("Graph label")
         .addNode(a)
         .startClus()
         .id("1")
-        .style(ClusterStyle.DASHED)
+        .style(ClusterStyle.ROUNDED)
         .shape(ClusterShapeEnum.SEPTAGON)
         .bgColor(Color.PINK)
         .addNode(d)
         .startClus()
         .id("2")
-        .tempNode(Node.builder().shape(NodeShapeEnum.REGULAR_POLYLINE).build())
-        .shape(ClusterShapeEnum.CIRCLE)
+        .tempNode(Node.builder().shape(NodeShapeEnum.REGULAR_POLYLINE).style(NodeStyle.ROUNDED).build())
+        .shape(ClusterShapeEnum.RECT)
+        .style(ClusterStyle.ROUNDED)
         .color(Color.RED)
         .bgColor(Color.GREEN)
         .addLine(b, c, e, f, g)

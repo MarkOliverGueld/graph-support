@@ -21,7 +21,7 @@ package org.graphper.api.attributes;
  *
  * @author Jamison Jiang
  */
-public enum NodeStyle {
+public enum NodeStyle implements Style {
 
   /**
    * Dashed node border consisting of a series of line segment.
@@ -48,5 +48,5 @@ public enum NodeStyle {
    */
   BOLD,
 
-  ROUND
+  ROUNDED
 }
