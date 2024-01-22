@@ -366,7 +366,8 @@ public class ClusterTest extends GraphvizVisual {
         .style(ClusterStyle.ROUNDED)
         .color(Color.RED)
         .bgColor(Color.GREEN)
-        .addLine(b, c, e, f, g, h)
+        .addLine(Line.builder(b, c).style(LineStyle.DASHED, LineStyle.BOLD).build())
+        .addLine(c, e, f, g, h)
         .endClus()
         .endClus()
         .build();

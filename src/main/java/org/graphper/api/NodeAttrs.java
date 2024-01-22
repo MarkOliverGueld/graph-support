@@ -17,7 +17,6 @@
 package org.graphper.api;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -29,6 +28,7 @@ import org.graphper.api.attributes.NodeShape;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.NodeStyle;
 import org.graphper.def.FlatPoint;
+import org.graphper.util.CollectionUtils;
 
 /**
  * Node attribute object.
@@ -67,7 +67,7 @@ public class NodeAttrs implements Serializable, Cloneable {
 
   Double fontSize;
 
-  NodeStyle[] styles;
+  Collection<NodeStyle> styles;
 
   Integer sides;
 
@@ -125,10 +125,10 @@ public class NodeAttrs implements Serializable, Cloneable {
   }
 
   public Collection<NodeStyle> getStyles() {
-    if (styles == null || styles.length == 0) {
+    if (CollectionUtils.isEmpty(styles)) {
       return Collections.emptyList();
     }
-    return Arrays.asList(styles);
+    return styles;
   }
 
   public Double getHeight() {

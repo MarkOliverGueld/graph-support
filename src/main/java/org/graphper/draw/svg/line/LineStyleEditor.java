@@ -16,6 +16,7 @@
 
 package org.graphper.draw.svg.line;
 
+import java.util.Collection;
 import org.graphper.api.LineAttrs;
 import org.graphper.api.attributes.ArrowShape;
 import org.graphper.api.attributes.Color;
@@ -25,6 +26,7 @@ import org.graphper.draw.LineEditor;
 import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
 import org.graphper.draw.svg.SvgConstants;
+import org.graphper.util.CollectionUtils;
 
 public class LineStyleEditor implements LineEditor<SvgBrush> {
 
@@ -32,14 +34,9 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
   public boolean edit(LineDrawProp line, SvgBrush brush) {
     setArrowProp(line.lineAttrs(), brush);
 
-    LineStyle style = line.lineAttrs().getStyle();
-    if (style == null) {
+    Collection<LineStyle> styles = line.lineAttrs().getStyles();
+    if (CollectionUtils.isEmpty(styles)) {
       return true;
-    }
-
-    if (style == LineStyle.INVIS) {
-      brush.drawBoard().removeLine(line.getLine());
-      return false;
     }
 
     Element pathEle = brush.getOrCreateChildElementById(
@@ -47,21 +44,21 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
         SvgConstants.PATH_ELE
     );
 
-    if (style == LineStyle.DASHED) {
-      dashed(pathEle);
-      return true;
-    }
+    for (LineStyle style : styles) {
+      if (style == LineStyle.DASHED) {
+        dashed(pathEle);
+        continue;
+      }
 
-    if (style == LineStyle.DOTTED) {
-      dotted(pathEle);
-      return true;
-    }
+      if (style == LineStyle.DOTTED) {
+        dotted(pathEle);
+        continue;
+      }
 
-    if (style == LineStyle.BOLD) {
-      bold(pathEle);
-      return true;
+      if (style == LineStyle.BOLD) {
+        bold(pathEle);
+      }
     }
-
     return true;
   }
 

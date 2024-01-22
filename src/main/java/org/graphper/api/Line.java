@@ -17,6 +17,7 @@
 package org.graphper.api;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import org.graphper.api.Html.Table;
 import org.graphper.api.attributes.ArrowShape;
 import org.graphper.api.attributes.Color;
@@ -363,11 +364,14 @@ public class Line implements Comparable<Line>, Serializable {
     /**
      * Set the style of line, Please check the details {@link LineStyle}.
      *
-     * @param lineStyle line style
+     * @param styles line style
      * @return line builder
      */
-    public LineBuilder style(LineStyle lineStyle) {
-      lineAttrs.style = lineStyle;
+    public LineBuilder style(LineStyle... styles) {
+      if (styles == null || styles.length == 0) {
+        return this;
+      }
+      lineAttrs.styles = Arrays.asList(styles);
       return this;
     }
 
