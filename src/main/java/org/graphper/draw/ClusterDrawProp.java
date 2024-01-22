@@ -84,7 +84,7 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
 
   @Override
   public boolean containsRounded() {
-    return cluster.clusterAttrs().getStyle() == ClusterStyle.ROUNDED;
+    return cluster.clusterAttrs().getStyles().contains(ClusterStyle.ROUNDED);
   }
 
   @Override

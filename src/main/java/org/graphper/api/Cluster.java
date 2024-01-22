@@ -17,6 +17,7 @@
 package org.graphper.api;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import org.graphper.api.Html.Table;
 import org.graphper.api.attributes.ClusterShape;
 import org.graphper.api.attributes.ClusterShapeEnum;
@@ -133,11 +134,14 @@ public class Cluster extends GraphContainer implements Serializable {
     /**
      * Set the font style of cluster.
      *
-     * @param style cluster style
+     * @param styles cluster style
      * @return cluster builder
      */
-    public B style(ClusterStyle style) {
-      clusterAttrs.style = style;
+    public B style(ClusterStyle... styles) {
+      if (styles == null || styles.length == 0) {
+        return self();
+      }
+      clusterAttrs.styles = Arrays.asList(styles);
       return self();
     }
 

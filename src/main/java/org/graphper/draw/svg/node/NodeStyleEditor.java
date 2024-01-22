@@ -31,12 +31,12 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
   @Override
   public boolean edit(NodeDrawProp node, SvgBrush brush) {
     for (Element element : brush.getEleGroup(SHAPE_GROUP_KEY)) {
-      setStyle(node, brush, element);
+      setStyle(node, element);
     }
     return true;
   }
 
-  private void setStyle(NodeDrawProp node, SvgBrush brush, Element element) {
+  private void setStyle(NodeDrawProp node, Element element) {
     NodeAttrs nodeAttrs = node.nodeAttrs();
 
     Double penWidth = nodeAttrs.getPenWidth();
@@ -47,26 +47,25 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
     Collection<NodeStyle> styles = nodeAttrs.getStyles();
     if (CollectionUtils.isEmpty(styles)) {
       element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
-      pointAddFillStyle(node, brush, nodeAttrs, element);
+      pointAddFillStyle(nodeAttrs, element);
       return;
     }
 
     for (NodeStyle style : styles) {
       element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
-      drawStyle(brush, node, element, style);
+      drawStyle(element, style);
     }
 
-    pointAddFillStyle(node, brush, nodeAttrs, element);
+    pointAddFillStyle(nodeAttrs, element);
   }
 
-  private void pointAddFillStyle(NodeDrawProp node, SvgBrush brush, NodeAttrs nodeAttrs,
-                                 Element shapeElement) {
+  private void pointAddFillStyle(NodeAttrs nodeAttrs, Element shapeElement) {
     if (nodeAttrs.getNodeShape() == NodeShapeEnum.POINT) {
-      drawStyle(brush, node, shapeElement, NodeStyle.SOLID);
+      drawStyle(shapeElement, NodeStyle.SOLID);
     }
   }
 
-  private void drawStyle(SvgBrush brush, NodeDrawProp node, Element shape, NodeStyle nodeStyle) {
+  private void drawStyle(Element shape, NodeStyle nodeStyle) {
     switch (nodeStyle) {
       case DASHED:
         dashed(shape);
