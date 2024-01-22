@@ -762,7 +762,7 @@ public class TableCaseTest extends GraphvizVisual {
                 .border(10).fixedSize(true).cellBorder(2).height(100).width(200)
                 .fixedSize(false).href("https://github.com/")
                 .tr(td, td().text("o"), td().text("x")
-                    .style(NodeStyle.BOLD, NodeStyle.ROUNDED).color(Color.GREEN))
+                    .style(NodeStyle.BOLD, NodeStyle.ROUNDED).color(Color.PURPLE))
                 .tr(td().text("o"), td().text("x"), td().text("o"))
                 .tr(td().text("x"), td().text("o"), td().text("x"))
         )
