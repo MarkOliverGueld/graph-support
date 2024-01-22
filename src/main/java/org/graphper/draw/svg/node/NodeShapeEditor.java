@@ -24,7 +24,6 @@ import org.apache_gs.commons.lang3.StringUtils;
 import org.graphper.api.NodeAttrs;
 import org.graphper.api.attributes.NodeShape;
 import org.graphper.api.attributes.NodeShapeEnum;
-import org.graphper.api.attributes.NodeStyle;
 import org.graphper.api.ext.CylinderPropCalc;
 import org.graphper.api.ext.NotePropCalc;
 import org.graphper.api.ext.RecordPropCalc;
@@ -93,8 +92,7 @@ public class NodeShapeEditor extends AbstractNodeShapeEditor {
         cylinder(nodeDrawProp, brush);
         break;
       case RECORD:
-        NodeStyle style = nodeDrawProp.nodeAttrs().getStyle();
-        record(nodeDrawProp, brush, style == NodeStyle.ROUNDED);
+        record(nodeDrawProp, brush, nodeDrawProp.containsRounded());
         break;
       case M_RECORD:
         record(nodeDrawProp, brush, true);

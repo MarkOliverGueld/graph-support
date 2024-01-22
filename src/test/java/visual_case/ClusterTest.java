@@ -339,11 +339,9 @@ public class ClusterTest extends GraphvizVisual {
 
   @Test
   public void testClusterShape_1() {
-    Node a = Node.builder().shape(NodeShapeEnum.RECT)
-        .style(NodeStyle.ROUNDED)
-        .label("a").build();
-    Node b = Node.builder().label("b").shape(NodeShapeEnum.PARALLELOGRAM).build();
-    Node c = Node.builder().label("c").shape(NodeShapeEnum.TRAPEZIUM).build();
+    Node a = Node.builder().shape(NodeShapeEnum.RECT).style(NodeStyle.ROUNDED).label("a").build();
+    Node b = Node.builder().label("b").color(Color.ORANGE).shape(NodeShapeEnum.PARALLELOGRAM).build();
+    Node c = Node.builder().label("c").fillColor(Color.BLUE).fontColor(Color.WHITE).shape(NodeShapeEnum.TRAPEZIUM).build();
     Node d = Node.builder().label("d").shape(NodeShapeEnum.TRAPEZIUM).build();
     Node e = Node.builder().label("e").shape(NodeShapeEnum.STAR).build();
     Node h = Node.builder().label("h").shape(NodeShapeEnum.DIAMOND).build();
@@ -362,7 +360,8 @@ public class ClusterTest extends GraphvizVisual {
         .addNode(d)
         .startClus()
         .id("2")
-        .tempNode(Node.builder().shape(NodeShapeEnum.REGULAR_POLYLINE).style(NodeStyle.ROUNDED).build())
+        .tempNode(Node.builder().shape(NodeShapeEnum.REGULAR_POLYLINE)
+                      .style(NodeStyle.ROUNDED, NodeStyle.DASHED, NodeStyle.BOLD).build())
         .shape(ClusterShapeEnum.RECT)
         .style(ClusterStyle.ROUNDED)
         .color(Color.RED)

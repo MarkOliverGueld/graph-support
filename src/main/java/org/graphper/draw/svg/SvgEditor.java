@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.apache_gs.commons.lang3.StringUtils;
-import org.graphper.api.attributes.ClusterStyle;
 import org.graphper.api.attributes.Color;
-import org.graphper.api.attributes.NodeStyle;
 import org.graphper.api.ext.Box;
 import org.graphper.def.FlatPoint;
 import org.graphper.def.Vectors;
@@ -119,11 +117,9 @@ public class SvgEditor implements SvgConstants {
     Asserts.nullArgument(drawProp, "drawProp");
 
     Element shapeEle;
-    boolean isRound;
+    boolean isRound = drawProp.containsRounded();
     if (drawProp.isNodeProp()) {
       NodeDrawProp nodeDrawProp = ((NodeDrawProp) drawProp);
-      NodeStyle style = nodeDrawProp.nodeAttrs().getStyle();
-      isRound = style == NodeStyle.ROUNDED;
       if (isRound) {
         shapeEle = brush.getShapeElement(nodeDrawProp, PATH_ELE);
       } else {
@@ -131,8 +127,6 @@ public class SvgEditor implements SvgConstants {
       }
     } else if (drawProp.isClusterProp()) {
       ClusterDrawProp clusterDrawProp = ((ClusterDrawProp) drawProp);
-      ClusterStyle style = clusterDrawProp.getCluster().clusterAttrs().getStyle();
-      isRound = style == ClusterStyle.ROUNDED;
       if (isRound) {
         shapeEle = brush.getShapeElement(clusterDrawProp, PATH_ELE);
       } else {

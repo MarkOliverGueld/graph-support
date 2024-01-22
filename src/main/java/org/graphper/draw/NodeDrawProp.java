@@ -21,6 +21,7 @@ import org.graphper.api.Assemble;
 import org.graphper.api.Node;
 import org.graphper.api.NodeAttrs;
 import org.graphper.api.attributes.Labelloc;
+import org.graphper.api.attributes.NodeStyle;
 import org.graphper.api.attributes.Rankdir;
 import org.graphper.api.ext.ShapePropCalc;
 import org.graphper.def.FlatPoint;
@@ -74,6 +75,11 @@ public class NodeDrawProp extends ContainerDrawProp implements Serializable {
 
   public NodeAttrs nodeAttrs() {
     return nodeAttrs;
+  }
+
+  @Override
+  public boolean containsRounded() {
+    return nodeAttrs.getStyles().contains(NodeStyle.ROUNDED);
   }
 
   public String id() {

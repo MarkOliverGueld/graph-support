@@ -20,6 +20,7 @@ import java.io.Serializable;
 import org.graphper.api.Assemble;
 import org.graphper.api.Cluster;
 import org.graphper.api.attributes.ClusterShape;
+import org.graphper.api.attributes.ClusterStyle;
 import org.graphper.api.attributes.Labelloc;
 import org.graphper.def.FlatPoint;
 import org.graphper.util.Asserts;
@@ -79,6 +80,11 @@ public class ClusterDrawProp extends ContainerDrawProp implements Serializable {
 
   public void setMargin(FlatPoint margin) {
     this.margin = margin;
+  }
+
+  @Override
+  public boolean containsRounded() {
+    return cluster.clusterAttrs().getStyle() == ClusterStyle.ROUNDED;
   }
 
   @Override

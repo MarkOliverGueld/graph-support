@@ -16,14 +16,15 @@
 
 package org.graphper.draw.svg.node;
 
-import org.graphper.draw.svg.Element;
-import org.graphper.api.Node;
+import java.util.Collection;
 import org.graphper.api.NodeAttrs;
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.api.attributes.NodeStyle;
 import org.graphper.draw.NodeDrawProp;
+import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
 import org.graphper.draw.svg.SvgConstants;
+import org.graphper.util.CollectionUtils;
 
 public class NodeStyleEditor extends AbstractNodeShapeEditor {
 
@@ -43,15 +44,18 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
       element.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
     }
 
-    NodeStyle style = nodeAttrs.getStyle();
-    element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
-    if (style == null) {
+    Collection<NodeStyle> styles = nodeAttrs.getStyles();
+    if (CollectionUtils.isEmpty(styles)) {
       element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
       pointAddFillStyle(node, brush, nodeAttrs, element);
       return;
     }
 
-    drawStyle(brush, node, element, style);
+    for (NodeStyle style : styles) {
+      element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
+      drawStyle(brush, node, element, style);
+    }
+
     pointAddFillStyle(node, brush, nodeAttrs, element);
   }
 
@@ -63,14 +67,18 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
   }
 
   private void drawStyle(SvgBrush brush, NodeDrawProp node, Element shape, NodeStyle nodeStyle) {
-    if (nodeStyle == NodeStyle.DASHED) {
-      dashed(shape);
-    } else if (nodeStyle == NodeStyle.DOTTED) {
-      dotted(shape);
-    } else if (nodeStyle == NodeStyle.INVIS) {
-      invis(node.getNode(), brush);
-    } else if (nodeStyle == NodeStyle.BOLD) {
-      bold(shape);
+    switch (nodeStyle) {
+      case DASHED:
+        dashed(shape);
+        break;
+      case DOTTED:
+        dotted(shape);
+        break;
+      case BOLD:
+        bold(shape);
+        break;
+      default:
+        break;
     }
   }
 
@@ -86,10 +94,6 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
       shape.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
     }
     shape.setAttribute(SvgConstants.STROKE_DASHARRAY, "1,5");
-  }
-
-  private void invis(Node node, SvgBrush brush) {
-    brush.drawBoard().removeNode(node);
   }
 
   private void bold(Element shape) {

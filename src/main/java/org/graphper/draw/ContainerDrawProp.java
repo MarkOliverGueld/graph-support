@@ -155,6 +155,10 @@ public abstract class ContainerDrawProp extends Rectangle implements ShapePositi
     assemble = HtmlConvert.toAssemble(table);
   }
 
+  public boolean containsRounded() {
+    return false;
+  }
+
   protected abstract Labelloc labelloc();
 
   protected abstract FlatPoint margin();
