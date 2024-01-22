@@ -52,8 +52,11 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
     }
 
     for (NodeStyle style : styles) {
-      element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
       drawStyle(element, style);
+    }
+
+    if (element.getAttribute(FILL) == null) {
+      element.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
     }
 
     pointAddFillStyle(nodeAttrs, element);

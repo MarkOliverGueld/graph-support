@@ -373,11 +373,10 @@ public class Node extends VertexIndex implements Comparable<Node>, Serializable 
      *
      * @param styles node style
      * @return node builder
+     * @throws IllegalArgumentException empty styles or contains null style
      */
     public NodeBuilder style(NodeStyle... styles) {
-      if (styles == null || styles.length == 0) {
-        return this;
-      }
+      Asserts.nullOrContainsNull(styles);
       nodeAttrs.styles = Arrays.asList(styles);
       return this;
     }

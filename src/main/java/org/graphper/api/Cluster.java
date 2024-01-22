@@ -132,15 +132,14 @@ public class Cluster extends GraphContainer implements Serializable {
     }
 
     /**
-     * Set the font style of cluster.
+     * Set the style of cluster, Please check the details {@link ClusterStyle}.
      *
      * @param styles cluster style
      * @return cluster builder
+     * @throws IllegalArgumentException empty styles or contains null style
      */
     public B style(ClusterStyle... styles) {
-      if (styles == null || styles.length == 0) {
-        return self();
-      }
+      Asserts.nullOrContainsNull(styles);
       clusterAttrs.styles = Arrays.asList(styles);
       return self();
     }

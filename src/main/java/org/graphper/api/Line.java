@@ -366,11 +366,10 @@ public class Line implements Comparable<Line>, Serializable {
      *
      * @param styles line style
      * @return line builder
+     * @throws IllegalArgumentException empty styles or contains null style
      */
     public LineBuilder style(LineStyle... styles) {
-      if (styles == null || styles.length == 0) {
-        return this;
-      }
+      Asserts.nullOrContainsNull(styles);
       lineAttrs.styles = Arrays.asList(styles);
       return this;
     }
@@ -510,14 +509,10 @@ public class Line implements Comparable<Line>, Serializable {
      *
      * @param floatLabels float label array
      * @return line builder
-     * @throws IllegalArgumentException float labels is null or empty, or contains null item
+     * @throws IllegalArgumentException float labels is null or empty, or contains null element
      */
     public LineBuilder floatLabels(FloatLabel... floatLabels) {
-      Asserts.illegalArgument(floatLabels == null || floatLabels.length == 0,
-                              "floatLabels is empty");
-      for (FloatLabel floatLabel : floatLabels) {
-        Asserts.illegalArgument(floatLabel == null, "Float label array contains null item");
-      }
+      Asserts.nullOrContainsNull(floatLabels);
       lineAttrs.floatLabels = floatLabels;
       return this;
     }
