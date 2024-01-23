@@ -48,5 +48,8 @@ public enum NodeStyle implements Style {
    */
   BOLD,
 
+  /**
+   * Use rounded angles for nodes.
+   */
   ROUNDED
 }
