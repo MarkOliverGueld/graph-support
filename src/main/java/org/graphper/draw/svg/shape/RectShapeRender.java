@@ -16,8 +16,6 @@
 
 package org.graphper.draw.svg.shape;
 
-import static org.graphper.draw.svg.SvgConstants.STROKE_WIDTH;
-
 import org.graphper.api.attributes.NodeShapeEnum;
 import org.graphper.draw.ClusterDrawProp;
 import org.graphper.draw.ContainerDrawProp;
@@ -41,11 +39,7 @@ public class RectShapeRender extends CustomizeShapeRender {
 
   @Override
   public void drawClusterSvg(SvgBrush clusterBrush, ClusterDrawProp clusterDrawProp) {
-    Element clusterEle = draw(clusterBrush, clusterDrawProp);
-    double penWidth = clusterDrawProp.getCluster().clusterAttrs().getPenWidth();
-    clusterEle.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
-
-
+    draw(clusterBrush, clusterDrawProp);
   }
 
   private Element draw(SvgBrush brush, ContainerDrawProp box) {

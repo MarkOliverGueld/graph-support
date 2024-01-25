@@ -70,6 +70,8 @@ public class ClusterStyleEditor extends SvgEditor implements ClusterEditor<SvgBr
   }
 
   private void bold(Element cluster) {
-    cluster.setAttribute(SvgConstants.STROKE_WIDTH, "2");
+    if (cluster.getAttribute(SvgConstants.STROKE_WIDTH) == null) {
+      cluster.setAttribute(SvgConstants.STROKE_WIDTH, "2");
+    }
   }
 }

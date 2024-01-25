@@ -99,6 +99,8 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
   }
 
   private void bold(Element shape) {
-    shape.setAttribute(SvgConstants.STROKE_WIDTH, "2");
+    if (shape.getAttribute(STROKE_WIDTH) == null) {
+      shape.setAttribute(SvgConstants.STROKE_WIDTH, "2");
+    }
   }
 }

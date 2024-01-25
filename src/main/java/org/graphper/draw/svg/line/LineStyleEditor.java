@@ -98,6 +98,8 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
   }
 
   private void bold(Element shape) {
-    shape.setAttribute(SvgConstants.STROKE_WIDTH, "2");
+    if (shape.getAttribute(SvgConstants.STROKE_WIDTH) == null) {
+      shape.setAttribute(SvgConstants.STROKE_WIDTH, "2");
+    }
   }
 }
