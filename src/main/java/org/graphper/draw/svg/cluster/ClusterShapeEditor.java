@@ -16,7 +16,9 @@
 
 package org.graphper.draw.svg.cluster;
 
+import org.graphper.api.ClusterAttrs;
 import org.graphper.api.attributes.ClusterShape;
+import org.graphper.api.attributes.ClusterStyle;
 import org.graphper.draw.ClusterDrawProp;
 import org.graphper.draw.ClusterEditor;
 import org.graphper.draw.CustomizeShapeRender;
@@ -36,8 +38,10 @@ public class ClusterShapeEditor extends SvgEditor implements ClusterEditor<SvgBr
     if (customizeShapeRender != null) {
       customizeShapeRender.drawClusterSvg(brush, cluster);
     }
-
-    double penWidth = cluster.getCluster().clusterAttrs().getPenWidth();
+    ClusterAttrs clusterAttrs = cluster.getCluster().clusterAttrs();
+    double penWidth = clusterAttrs.getPenWidth();
+    penWidth = SvgEditor.strokeWidth(penWidth,
+                                     clusterAttrs.getStyles().contains(ClusterStyle.BOLD));
     for (Element clusterEle : brush.getEleGroup(SHAPE_GROUP_KEY)) {
       clusterEle.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
     }

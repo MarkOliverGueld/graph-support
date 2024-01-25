@@ -24,6 +24,7 @@ import org.graphper.draw.NodeDrawProp;
 import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
 import org.graphper.draw.svg.SvgConstants;
+import org.graphper.draw.svg.SvgEditor;
 import org.graphper.util.CollectionUtils;
 
 public class NodeStyleEditor extends AbstractNodeShapeEditor {
@@ -41,6 +42,7 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
 
     Double penWidth = nodeAttrs.getPenWidth();
     if (penWidth != null) {
+      penWidth = SvgEditor.strokeWidth(penWidth, nodeAttrs.getStyles().contains(NodeStyle.BOLD));
       element.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
     }
 
@@ -76,9 +78,6 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
       case DOTTED:
         dotted(shape);
         break;
-      case BOLD:
-        bold(shape);
-        break;
       default:
         break;
     }
@@ -96,11 +95,5 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
       shape.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
     }
     shape.setAttribute(SvgConstants.STROKE_DASHARRAY, "1,5");
-  }
-
-  private void bold(Element shape) {
-    if (shape.getAttribute(STROKE_WIDTH) == null) {
-      shape.setAttribute(SvgConstants.STROKE_WIDTH, "2");
-    }
   }
 }

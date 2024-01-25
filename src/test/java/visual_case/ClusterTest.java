@@ -356,7 +356,7 @@ public class ClusterTest extends GraphvizVisual {
         .id("1")
         .style(ClusterStyle.ROUNDED, ClusterStyle.DOTTED, ClusterStyle.BOLD)
         .shape(ClusterShapeEnum.SEPTAGON)
-        .penWidth(10)
+        .penWidth(2.1)
         .bgColor(Color.PINK)
         .addNode(d)
         .startClus()

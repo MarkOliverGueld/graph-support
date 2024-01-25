@@ -16,7 +16,9 @@
 
 package org.graphper.draw.svg.line;
 
+import org.graphper.api.LineAttrs;
 import org.graphper.api.attributes.Color;
+import org.graphper.api.attributes.LineStyle;
 import org.graphper.draw.LineDrawProp;
 import org.graphper.draw.LineEditor;
 import org.graphper.draw.svg.Element;
@@ -70,8 +72,10 @@ public class LinePathEditor extends SvgEditor implements LineEditor<SvgBrush> {
 
 		title.setTextContent(text);
 
-		Double penWidth = lineDrawProp.lineAttrs().getPenWidth();
+		LineAttrs lineAttrs = lineDrawProp.lineAttrs();
+		Double penWidth = lineAttrs.getPenWidth();
 		if (penWidth != null) {
+			penWidth = SvgEditor.strokeWidth(penWidth, lineAttrs.getStyles().contains(LineStyle.BOLD));
 			pathElement.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
 		}
 

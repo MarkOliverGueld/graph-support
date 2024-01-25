@@ -50,8 +50,6 @@ public class ClusterStyleEditor extends SvgEditor implements ClusterEditor<SvgBr
       dashed(cluster);
     } else if (style == ClusterStyle.DOTTED) {
       dotted(cluster);
-    } else if (style == ClusterStyle.BOLD) {
-      bold(cluster);
     }
   }
 
@@ -67,11 +65,5 @@ public class ClusterStyleEditor extends SvgEditor implements ClusterEditor<SvgBr
       cluster.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
     }
     cluster.setAttribute(SvgConstants.STROKE_DASHARRAY, "1,5");
-  }
-
-  private void bold(Element cluster) {
-    if (cluster.getAttribute(SvgConstants.STROKE_WIDTH) == null) {
-      cluster.setAttribute(SvgConstants.STROKE_WIDTH, "2");
-    }
   }
 }

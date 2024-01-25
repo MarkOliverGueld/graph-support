@@ -26,6 +26,7 @@ import org.graphper.draw.LineEditor;
 import org.graphper.draw.svg.Element;
 import org.graphper.draw.svg.SvgBrush;
 import org.graphper.draw.svg.SvgConstants;
+import org.graphper.draw.svg.SvgEditor;
 import org.graphper.util.CollectionUtils;
 
 public class LineStyleEditor implements LineEditor<SvgBrush> {
@@ -52,11 +53,6 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
 
       if (style == LineStyle.DOTTED) {
         dotted(pathEle);
-        continue;
-      }
-
-      if (style == LineStyle.BOLD) {
-        bold(pathEle);
       }
     }
     return true;
@@ -64,6 +60,9 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
 
   private void setArrowProp(LineAttrs lineAttrs, SvgBrush brush) {
     Double penWidth = lineAttrs.getPenWidth();
+    if (penWidth != null) {
+      penWidth = SvgEditor.strokeWidth(penWidth, lineAttrs.getStyles().contains(LineStyle.BOLD));
+    }
 
     Color color = lineAttrs.getColor();
     ArrowShape arrowHead = lineAttrs.getArrowHead();
@@ -95,11 +94,5 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
   private void dotted(Element pathEle) {
     pathEle.setAttribute(SvgConstants.FILL, SvgConstants.NONE);
     pathEle.setAttribute(SvgConstants.STROKE_DASHARRAY, "1,5");
-  }
-
-  private void bold(Element shape) {
-    if (shape.getAttribute(SvgConstants.STROKE_WIDTH) == null) {
-      shape.setAttribute(SvgConstants.STROKE_WIDTH, "2");
-    }
   }
 }

@@ -423,6 +423,10 @@ public class SvgEditor implements SvgConstants {
     return sb.toString();
   }
 
+  public static double strokeWidth(double penwidth, boolean isBold) {
+    return isBold ? Math.max(penwidth, 2) : penwidth;
+  }
+
   // -------------------------------------------- subclass --------------------------------------------
 
   public static class TextAttribute {
