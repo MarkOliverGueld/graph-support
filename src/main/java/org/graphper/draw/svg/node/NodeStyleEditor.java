@@ -41,9 +41,12 @@ public class NodeStyleEditor extends AbstractNodeShapeEditor {
     NodeAttrs nodeAttrs = node.nodeAttrs();
 
     Double penWidth = nodeAttrs.getPenWidth();
+    boolean haveBold = nodeAttrs.getStyles().contains(NodeStyle.BOLD);
     if (penWidth != null) {
-      penWidth = SvgEditor.strokeWidth(penWidth, nodeAttrs.getStyles().contains(NodeStyle.BOLD));
+      penWidth = SvgEditor.strokeWidth(penWidth, haveBold);
       element.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
+    } else if (haveBold) {
+      element.setAttribute(STROKE_WIDTH, "2");
     }
 
     Collection<NodeStyle> styles = nodeAttrs.getStyles();

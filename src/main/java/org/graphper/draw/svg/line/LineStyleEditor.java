@@ -60,8 +60,11 @@ public class LineStyleEditor implements LineEditor<SvgBrush> {
 
   private void setArrowProp(LineAttrs lineAttrs, SvgBrush brush) {
     Double penWidth = lineAttrs.getPenWidth();
+    boolean haveBold = lineAttrs.getStyles().contains(LineStyle.BOLD);
     if (penWidth != null) {
-      penWidth = SvgEditor.strokeWidth(penWidth, lineAttrs.getStyles().contains(LineStyle.BOLD));
+      penWidth = SvgEditor.strokeWidth(penWidth, haveBold);
+    } else if (haveBold) {
+      penWidth = 2.0;
     }
 
     Color color = lineAttrs.getColor();

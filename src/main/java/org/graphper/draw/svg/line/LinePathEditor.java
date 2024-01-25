@@ -74,9 +74,12 @@ public class LinePathEditor extends SvgEditor implements LineEditor<SvgBrush> {
 
 		LineAttrs lineAttrs = lineDrawProp.lineAttrs();
 		Double penWidth = lineAttrs.getPenWidth();
+		boolean haveBold = lineAttrs.getStyles().contains(LineStyle.BOLD);
 		if (penWidth != null) {
-			penWidth = SvgEditor.strokeWidth(penWidth, lineAttrs.getStyles().contains(LineStyle.BOLD));
+			penWidth = SvgEditor.strokeWidth(penWidth, haveBold);
 			pathElement.setAttribute(STROKE_WIDTH, String.valueOf(penWidth));
+		} else if (haveBold) {
+			pathElement.setAttribute(STROKE_WIDTH, "2");
 		}
 
 		return true;
