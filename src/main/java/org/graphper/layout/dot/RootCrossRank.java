@@ -518,6 +518,9 @@ class RootCrossRank implements CrossRank {
   }
 
   private boolean canExchange(DNode left, DNode right) {
+//    if (left.getContainer() != right.getContainer()) {
+//      return false;
+//    }
     if (sameRankAdjacentRecord == null) {
       return true;
     }

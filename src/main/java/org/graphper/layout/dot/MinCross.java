@@ -28,8 +28,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import org.graphper.api.Cluster;
@@ -619,7 +621,7 @@ class MinCross {
         }
 
         GraphContainer commonParent = dotAttachment.commonParent(node, mergeNode);
-        if (dotAttachment.notContain(cluster, commonParent)) {
+        if (dotAttachment.notContains(cluster, commonParent)) {
           continue;
         }
 
@@ -793,7 +795,7 @@ class MinCross {
           mark(node);
 
           for (DLine line : rootCrossRank.getDigraphProxy().outAdjacent(node)) {
-            if (dotAttachment.notContain(graphContainer, line.to().getContainer())) {
+            if (dotAttachment.notContains(graphContainer, line.to().getContainer())) {
               continue;
             }
 
@@ -826,11 +828,34 @@ class MinCross {
       crossRank.exchange(from, crossRank.getNode(from.getRank(), idx));
       rankAccessIndex.put(from.getRank(), idx + 1);
 
+      GraphContainer fromContainer = from.getContainer();
+      int fromMin = 0;
+      int fromMax = 0;
+      if (fromContainer.isCluster() && clusterExpand != null
+          && clusterExpand.clusterMerge != null) {
+        fromMin = clusterExpand.clusterMerge.minRank((Cluster) fromContainer);
+        fromMax = clusterExpand.clusterMerge.maxRank((Cluster) fromContainer);
+      }
+
       Iterable<DLine> adjacent = adjacentFunc.apply(from);
       for (DLine dLine : adjacent) {
         DNode to = dLine.other(from);
 
-        if (dotAttachment.notContain(graphContainer, to.getContainer())) {
+        // Make sure cluster of to not intersect with cluster of from
+        GraphContainer toContainer = to.getContainer();
+        if (fromContainer != toContainer && fromContainer.isCluster() && toContainer.isCluster()
+            && clusterExpand != null && clusterExpand.clusterMerge != null) {
+          GraphContainer parentContainer = dotAttachment.commonParent(from, to);
+          if (parentContainer != fromContainer && parentContainer != toContainer) {
+            int toMin = clusterExpand.clusterMerge.minRank((Cluster) toContainer);
+            int toMax = clusterExpand.clusterMerge.maxRank((Cluster) toContainer);
+            if (intersect(fromMin, fromMax, toMin, toMax)) {
+//              continue;
+            }
+          }
+        }
+
+        if (dotAttachment.notContains(graphContainer, to.getContainer())) {
           continue;
         }
 
@@ -849,6 +874,15 @@ class MinCross {
 
         dfs(to, adjacentFunc);
       }
+    }
+
+    private boolean intersect(int fromMin, int fromMax, int toMin, int toMax) {
+      return inRange(toMin, toMax, fromMin) || inRange(toMin, toMax, fromMax)
+          || inRange(fromMin, fromMax, toMin) || inRange(fromMin, fromMax, toMax);
+    }
+
+    private boolean inRange(int start, int end, int target) {
+      return target >= start && target <= end;
     }
 
     private Iterable<DLine> sortLines(DNode node, DrawGraph drawGraph, Iterable<DLine> lines) {
@@ -924,7 +958,7 @@ class MinCross {
 
   private static class ClusterMerge {
 
-    private final Map<Cluster, Map<Integer, DNode>> clusterRankProxyNode;
+    private final Map<Cluster, NavigableMap<Integer, DNode>> clusterRankProxyNode;
 
     private final Map<DNode, DNode> mergeNodeMap;
 
@@ -950,11 +984,29 @@ class MinCross {
     }
 
     DNode getMergeNodeOrPut(Cluster cluster, DNode node) {
-      DNode n = clusterRankProxyNode.computeIfAbsent(cluster, c -> new HashMap<>())
+      DNode n = clusterRankProxyNode.computeIfAbsent(cluster, c -> new TreeMap<>())
           .computeIfAbsent(node.getRank(), k -> node);
 
       mergeNodeMap.put(node, n);
       return n;
+    }
+
+    int minRank(Cluster cluster) {
+      NavigableMap<Integer, DNode> rankMap = clusterRankProxyNode.get(cluster);
+      Asserts.illegalArgument(rankMap == null || rankMap.isEmpty(),
+                              "Do not have cluster rank record");
+      Integer rank = rankMap.firstKey();
+      Asserts.nullArgument(rank, "Cluster min rank");
+      return rank;
+    }
+
+    int maxRank(Cluster cluster) {
+      NavigableMap<Integer, DNode> rankMap = clusterRankProxyNode.get(cluster);
+      Asserts.illegalArgument(rankMap == null || rankMap.isEmpty(),
+                              "Do not have cluster rank record");
+      Integer rank = rankMap.lastKey();
+      Asserts.nullArgument(rank, "Cluster min rank");
+      return rank;
     }
   }
 

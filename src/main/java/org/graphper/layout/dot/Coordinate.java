@@ -374,7 +374,7 @@ class Coordinate extends AbstractCoordinate {
         || clusterNode == null
         || !node.getContainer().isCluster()
         || node.getContainer() == container
-        || !dotAttachment.notContain(node.getContainer(), container)) {
+        || !dotAttachment.notContains(node.getContainer(), container)) {
       return node;
     }
 
