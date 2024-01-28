@@ -137,14 +137,17 @@ public class DotLayoutEngine extends AbstractLayoutEngine implements Serializabl
       dn = dotAttachment.mappingToDNode(node);
     }
 
+    if (parentContainer.isSubgraph()) {
+      if (!parentContainer.isTransparent()) {
+        dotAttachment.markHaveSubgraph();
+      }
+      parentContainer = drawGraph.getGraphviz().effectiveFather(parentContainer);
+    }
+
     // Set node parent container
     if (dn.getContainer() == null || dn.getContainer().isGraphviz()) {
-      if (parentContainer.isSubgraph()) {
-        if (!parentContainer.isTransparent()) {
-          dotAttachment.markHaveSubgraph();
-        }
-        parentContainer = drawGraph.getGraphviz().effectiveFather(parentContainer);
-      }
+      dn.setContainer(parentContainer);
+    } else if (dn.getContainer().containsContainer(parentContainer)) {
       dn.setContainer(parentContainer);
     }
 
